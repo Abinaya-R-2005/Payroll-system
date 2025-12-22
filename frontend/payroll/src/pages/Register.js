@@ -1,148 +1,172 @@
-import React, { useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import Button from '../components/Button';
-import Input from '../components/Input';
-import '../styles/Register.css';
+import React, { useState } from "react";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import Button from "../components/Button";
+import Input from "../components/Input";
+import "../styles/Register.css";
 
 const Register = () => {
-    const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
-    const { register } = useAuth();
-    const role = searchParams.get('role') || 'employee';
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const role = searchParams.get("role") || "employee";
 
-    const [formData, setFormData] = useState({
-        // 1. Personal Identity
-        fullName: '', dob: '', personalEmail: '', phone: '', address: '', taxStatus: 'Single',
-        // 2. Banking
-        accountName: '', accountNumber: '', bankCode: '', accountType: 'Savings',
-        // 3. Employment
-        employeeId: '', jobTitle: '', department: '', joiningDate: '', workLocation: '',
-        // 4. Security
-        emergencyName: '', emergencyRel: '', emergencyPhone: '', consent: false,
-        // 5. Login
-        email: '', password: '', confirmPassword: ''
-    });
+  const [formData, setFormData] = useState({
+    // Personal
+    fullName: "",
+    dob: "",
+    personalEmail: "",
+    phone: "",
+    address: "",
+    taxStatus: "Single",
 
-    const handleChange = (e) => {
-        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-        setFormData({ ...formData, [e.target.name]: value });
-    };
+    // Banking
+    accountName: "",
+    accountNumber: "",
+    bankCode: "",
+    accountType: "Savings",
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            alert("Passwords do not match");
-            return;
-        }
-        register({ ...formData, role });
-        // After reg, usually redirect to login or dashboard. Redirecting to login for now.
-        navigate(`/login?role=${role}`);
-    };
+    // Employment
+    employeeId: "",
+    jobTitle: "",
+    department: "",
+    joiningDate: "",
+    workLocation: "",
 
-    const SectionTitle = ({ children }) => (
-        <h3 className="section-title">
-            {children}
-        </h3>
-    );
+    // Emergency
+    emergencyName: "",
+    emergencyRel: "",
+    emergencyPhone: "",
+    consent: false,
 
-    return (
-        <div className="register-container fade-in">
-            <div className="register-card">
-                <div className="register-header">
-                    <h2 className="register-title">{role === 'admin' ? 'Admin' : 'Employee'} Registration</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Complete your profile to join the system</p>
-                </div>
+    // Login
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-section">
-                        <SectionTitle>1. Personal Identity Details</SectionTitle>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <Input label="Full Legal Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
-                            <Input label="Date of Birth" name="dob" type="date" value={formData.dob} onChange={handleChange} required />
-                            <Input label="Personal Email" name="personalEmail" type="email" value={formData.personalEmail} onChange={handleChange} required />
-                            <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} required />
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <Input label="Home Address" name="address" value={formData.address} onChange={handleChange} required />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '1.25rem' }}>
-                                <label style={{ marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Tax Filing Status</label>
-                                <select name="taxStatus" value={formData.taxStatus} onChange={handleChange} style={{
-                                    padding: '0.8rem', borderRadius: 'var(--radius)', border: '1px solid var(--border-color)', background: 'rgba(255, 255, 255, 0.8)', color: 'var(--text-main)', outline: 'none'
-                                }}>
-                                    <option>Single</option>
-                                    <option>Married</option>
-                                    <option>Head of Household</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+  const handleChange = (e) => {
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
+  };
 
-                    <div className="form-section">
-                        <SectionTitle>2. Banking Details (Direct Deposit)</SectionTitle>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <Input label="Account Holder Name" name="accountName" value={formData.accountName} onChange={handleChange} required />
-                            <Input label="Bank Account Number" name="accountNumber" value={formData.accountNumber} onChange={handleChange} required />
-                            <Input label="IFSC / Routing Code" name="bankCode" value={formData.bankCode} onChange={handleChange} required />
-                            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '1.25rem' }}>
-                                <label style={{ marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Account Type</label>
-                                <select name="accountType" value={formData.accountType} onChange={handleChange} style={{
-                                    padding: '0.8rem', borderRadius: 'var(--radius)', border: '1px solid var(--border-color)', background: 'rgba(255, 255, 255, 0.8)', color: 'var(--text-main)', outline: 'none'
-                                }}>
-                                    <option>Savings</option>
-                                    <option>Current</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-                    <div className="form-section">
-                        <SectionTitle>3. Employment Details</SectionTitle>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <Input label="Employee ID" name="employeeId" value={formData.employeeId} onChange={handleChange} required />
-                            <Input label="Job Title" name="jobTitle" value={formData.jobTitle} onChange={handleChange} required />
-                            <Input label="Department" name="department" value={formData.department} onChange={handleChange} required />
-                            <Input label="Joining Date" name="joiningDate" type="date" value={formData.joiningDate} onChange={handleChange} required />
-                            <Input label="Work Location" name="workLocation" value={formData.workLocation} onChange={handleChange} required />
-                        </div>
-                    </div>
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
 
-                    <div className="form-section">
-                        <SectionTitle>4. Security & Emergency</SectionTitle>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <Input label="Emergency Contact Name" name="emergencyName" value={formData.emergencyName} onChange={handleChange} required />
-                            <Input label="Relationship" name="emergencyRel" value={formData.emergencyRel} onChange={handleChange} required />
-                            <Input label="Emergency Contact Phone" name="emergencyPhone" value={formData.emergencyPhone} onChange={handleChange} required />
-                        </div>
-                        <div style={{ margin: '20px 0', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                            <input type="checkbox" name="consent" checked={formData.consent} onChange={handleChange} id="consent" required style={{ width: '20px', height: '20px' }} />
-                            <label htmlFor="consent" style={{ color: 'var(--text-muted)' }}>I agree to the Payroll & Privacy Policy (Digital Consent)</label>
-                        </div>
-                    </div>
+    try {
+      const res = await fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ...formData,
+          role
+        })
+      });
 
-                    <div className="form-section">
-                        <SectionTitle>5. Login Credentials</SectionTitle>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-                            <Input label="Login Email" name="email" type="email" value={formData.email} onChange={handleChange} required />
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <Input label="Password" name="password" type="password" value={formData.password} onChange={handleChange} required />
-                                <Input label="Confirm Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
-                            </div>
-                        </div>
-                    </div>
+      const data = await res.json();
 
-                    <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                        <Button type="submit" variant="primary" className="btn-modern btn-primary" style={{ width: '100%', maxWidth: '300px', fontSize: '1.1rem' }}>Complete Registration</Button>
-                    </div>
+      if (!res.ok) {
+        alert(data.message || "Registration failed");
+        return;
+      }
 
-                    <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                        <Link to={`/login?role=${role}`} style={{ color: 'var(--text-muted)' }}>Already have an account? Login</Link>
-                    </div>
+      alert("Registration successful");
+      navigate(`/login?role=${role}`);
+    } catch (error) {
+      console.error("Fetch error:", error);
+      alert("Backend server not reachable");
+    }
+  };
 
-                </form>
-            </div>
+  const SectionTitle = ({ children }) => (
+    <h3 className="section-title">{children}</h3>
+  );
+
+  return (
+    <div className="register-container fade-in">
+      <div className="register-card">
+        <div className="register-header">
+          <h2 className="register-title">
+            {role === "admin" ? "Admin" : "Employee"} Registration
+          </h2>
+          <p style={{ color: "var(--text-muted)" }}>
+            Complete your profile to join the system
+          </p>
         </div>
-    );
+
+        <form onSubmit={handleSubmit}>
+          {/* 1. Personal */}
+          <div className="form-section">
+            <SectionTitle>1. Personal Identity Details</SectionTitle>
+            <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
+            <Input label="DOB" name="dob" type="date" value={formData.dob} onChange={handleChange} required />
+            <Input label="Personal Email" name="personalEmail" value={formData.personalEmail} onChange={handleChange} required />
+            <Input label="Phone" name="phone" value={formData.phone} onChange={handleChange} required />
+            <Input label="Address" name="address" value={formData.address} onChange={handleChange} required />
+          </div>
+
+          {/* 2. Banking */}
+          <div className="form-section">
+            <SectionTitle>2. Banking Details</SectionTitle>
+            <Input label="Account Name" name="accountName" value={formData.accountName} onChange={handleChange} required />
+            <Input label="Account Number" name="accountNumber" value={formData.accountNumber} onChange={handleChange} required />
+            <Input label="IFSC Code" name="bankCode" value={formData.bankCode} onChange={handleChange} required />
+          </div>
+
+          {/* 3. Employment */}
+          <div className="form-section">
+            <SectionTitle>3. Employment Details</SectionTitle>
+            <Input label="Employee ID" name="employeeId" value={formData.employeeId} onChange={handleChange} required />
+            <Input label="Job Title" name="jobTitle" value={formData.jobTitle} onChange={handleChange} required />
+            <Input label="Department" name="department" value={formData.department} onChange={handleChange} required />
+            <Input label="Joining Date" name="joiningDate" type="date" value={formData.joiningDate} onChange={handleChange} required />
+          </div>
+
+          {/* 4. Emergency */}
+          <div className="form-section">
+            <SectionTitle>4. Emergency Contact</SectionTitle>
+            <Input label="Name" name="emergencyName" value={formData.emergencyName} onChange={handleChange} required />
+            <Input label="Relation" name="emergencyRel" value={formData.emergencyRel} onChange={handleChange} required />
+            <Input label="Phone" name="emergencyPhone" value={formData.emergencyPhone} onChange={handleChange} required />
+
+            <label>
+              <input
+                type="checkbox"
+                name="consent"
+                checked={formData.consent}
+                onChange={handleChange}
+                required
+              />{" "}
+              I agree to terms & policy
+            </label>
+          </div>
+
+          {/* 5. Login */}
+          <div className="form-section">
+            <SectionTitle>5. Login Credentials</SectionTitle>
+            <Input label="Login Email" name="email" value={formData.email} onChange={handleChange} required />
+            <Input label="Password" type="password" name="password" value={formData.password} onChange={handleChange} required />
+            <Input label="Confirm Password" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
+          </div>
+
+          <Button type="submit" variant="primary" style={{ width: "100%" }}>
+            Complete Registration
+          </Button>
+
+          <p style={{ textAlign: "center", marginTop: "1rem" }}>
+            Already have an account?{" "}
+            <Link to={`/login?role=${role}`}>Login</Link>
+          </p>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default Register;
