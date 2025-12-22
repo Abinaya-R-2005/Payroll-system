@@ -1,20 +1,26 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import RoleSelection from './pages/RoleSelection';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import AdminDashboard from './pages/AdminDashboard';
-import EmployeeDashboard from './pages/EmployeeDashboard';
-import BackgroundSlider from './components/BackgroundSlider';
-import './App.css';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-// Protected Route Component
+import { AuthProvider, useAuth } from "./context/AuthContext";
+
+import Navbar from "./components/Navbar";
+import BackgroundSlider from "./components/BackgroundSlider";
+
+import Home from "./pages/Home";
+import RoleSelection from "./pages/RoleSelection";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import AdminDashboard from "./pages/AdminDashboard";
+import EmployeeDashboard from "./pages/EmployeeDashboard";
+
+import "./App.css";
+
+/* 🔐 Protected Route */
 const ProtectedRoute = ({ children, allowedRole }) => {
   const { user } = useAuth();
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (allowedRole && user.role !== allowedRole) {
@@ -27,32 +33,35 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 function App() {
   return (
     <AuthProvider>
-      <div className="App">
-        <BackgroundSlider />
-        <Routes>
-          <Route path="/" element={<RoleSelection />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      <BackgroundSlider />
+      <Navbar />
 
-          <Route
-            path="/admin-dashboard"
-            element={
-              <ProtectedRoute allowedRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+      <Routes>
+        {/* Public Pages */}
+        <Route path="/" element={<Home />} />
+        <Route path="/role" element={<RoleSelection />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-          <Route
-            path="/employee-dashboard"
-            element={
-              <ProtectedRoute allowedRole="employee">
-                <EmployeeDashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </div>
+        {/* Protected Pages */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/employee-dashboard"
+          element={
+            <ProtectedRoute allowedRole="employee">
+              <EmployeeDashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
     </AuthProvider>
   );
 }
