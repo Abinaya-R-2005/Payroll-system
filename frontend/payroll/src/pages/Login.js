@@ -18,13 +18,25 @@ const Login = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const success = login(formData.email, formData.password, role);
-        if (success) {
-            navigate(role === 'admin' ? '/admin-dashboard' : '/employee-dashboard');
-        }
-    };
+    const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const success = await login(
+    formData.email,
+    formData.password,
+    role
+  );
+
+  if (success) {
+    navigate(
+      role === "admin"
+        ? "/admin-dashboard"
+        : "/employee-dashboard"
+    );
+  }
+};
+
+
 
     return (
         <div className="login-container">
