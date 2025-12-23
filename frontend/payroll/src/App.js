@@ -1,5 +1,10 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar";
@@ -11,8 +16,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
+import EmployeeProfile from "./pages/EmployeeProfile";
 import EmployeeSuccess from "./pages/EmployeeSuccess";
 import ForgotPassword from "./pages/ForgotPassword";
+
 import "./App.css";
 
 /* 🔐 Protected Route */
@@ -30,11 +37,23 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   return children;
 };
 
-function App() {
+/* ✅ Layout Wrapper */
+const AppLayout = () => {
+  const location = useLocation();
+
+  // ❌ Hide navbar on employee/admin pages
+  const hideNavbarRoutes = [
+    "/employee-dashboard",
+    "/employee-profile",
+    "/admin-dashboard"
+  ];
+
+  const hideNavbar = hideNavbarRoutes.includes(location.pathname);
+
   return (
-    <AuthProvider>
+    <>
       <BackgroundSlider />
-      <Navbar />
+      {!hideNavbar && <Navbar />}
 
       <Routes>
         {/* 🌐 Public Routes */}
@@ -43,10 +62,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        {/* ✅ SUCCESS PAGE (PUBLIC) */}
         <Route path="/employee-success" element={<EmployeeSuccess />} />
 
-        {/* 🔐 Protected Routes */}
+        {/* 🔐 Admin */}
         <Route
           path="/admin-dashboard"
           element={
@@ -56,6 +74,7 @@ function App() {
           }
         />
 
+        {/* 🔐 Employee */}
         <Route
           path="/employee-dashboard"
           element={
@@ -64,8 +83,24 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/employee-profile"
+          element={
+            <ProtectedRoute allowedRole="employee">
+              <EmployeeProfile />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-      
+    </>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppLayout />
     </AuthProvider>
   );
 }
