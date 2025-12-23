@@ -134,6 +134,7 @@ app.post("/register", async (req, res) => {
 
 
 /* ---------- LOGIN (ADMIN & EMPLOYEE) ---------- */
+/* ---------- LOGIN (ADMIN & EMPLOYEE) ---------- */
 app.post("/login", async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -155,14 +156,19 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    // ✅ SEND NAME TO FRONTEND
     res.json({
-      role,
-      email: user.email
+      role: user.role || role,
+      email: user.email,
+      fullName: user.fullName,      // 👈 IMPORTANT
+      employeeId: user.employeeId   // 👈 optional but useful
     });
+
   } catch (err) {
     res.status(500).json({ message: "Login error" });
   }
 });
+
 app.get("/api/employees", async (req, res) => {
   try {
     const employees = await Employee.find({}, { password: 0, __v: 0 });
@@ -226,7 +232,39 @@ app.get("/api/attendance", (req, res) => {
   const { employeeId } = req.query;
   res.json(attendanceStore[employeeId] || {});
 });
+app.post("/forgot-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
 
+    // 🔍 Check Employee first
+    let user = await Employee.findOne({ email });
+    let userType = "employee";
+
+    // 🔍 If not employee, check Admin
+    if (!user) {
+      user = await Admin.findOne({ email });
+      userType = "admin";
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 🔐 Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+
+    await user.save();
+
+    res.json({
+      message: "Password updated successfully",
+      role: userType
+    });
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 /* ---------- SERVER ---------- */
 const PORT = process.env.PORT || 5000;

@@ -17,6 +17,7 @@ const EmployeeDashboard = () => {
         return new Date(d.getFullYear(), d.getMonth(), 1);
     });
     const [viewMode, setViewMode] = useState('overview'); // 'overview' or 'slip'
+    const [showMenu, setShowMenu] = useState(false); // For future use/dropdown if needed
 
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();

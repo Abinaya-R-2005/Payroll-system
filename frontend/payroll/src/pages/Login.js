@@ -38,34 +38,35 @@ const Login = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Login failed");
+        alert(data.message);
         return;
       }
 
-      // ✅ Update AuthContext
+      // ✅ FIXED: store fullName
       login({
-        email: data.email,
-        role: data.role
-      });
+  email: data.email,
+  role: data.role,
+  fullName: data.fullName,   // 👈 MATCH BACKEND
+  employeeId: data.employeeId
+});
 
-      // ✅ Navigate correctly
+
+      // ✅ Redirect
       if (data.role === "admin") {
-        navigate("/admin-dashboard", { replace: true });
+        navigate("/admin-dashboard");
       } else {
-        navigate("/employee-dashboard", { replace: true });
+        navigate("/employee-dashboard");
       }
 
     } catch (error) {
-      alert("Backend server not running");
+      alert("Server error");
     }
   };
 
   return (
     <div className="login-container">
-      <div className="login-card fade-in">
-        <div className="login-header">
-          <h2>{role === "admin" ? "Admin" : "Employee"} Login</h2>
-        </div>
+      <div className="login-card">
+        <h2>{role === "admin" ? "Admin" : "Employee"} Login</h2>
 
         <form onSubmit={handleSubmit}>
           <Input
@@ -85,15 +86,26 @@ const Login = () => {
             onChange={handleChange}
             required
           />
+          <div style={{ textAlign: "right", marginBottom: "12px" }}>
+  <Link
+    to="/forgot-password"
+    style={{
+      fontSize: "14px",
+      color: "#007bff",
+      textDecoration: "none"
+    }}
+  >
+    Forgot Password?
+  </Link>
+</div>
 
-          <Button type="submit" variant="primary" className="w-full">
-            Sign In
+
+          <Button type="submit" variant="primary">
+            Login
           </Button>
         </form>
 
-        <div className="login-footer">
-          <Link to="/">← Back</Link>
-        </div>
+        <Link to="/">← Back</Link>
       </div>
     </div>
   );
