@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import "../styles/Login.css";
@@ -7,9 +8,14 @@ import "../styles/Login.css";
 const Login = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const role = searchParams.get("role") || "employee";
-  const [formData, setFormData] = useState({ email: "", password: "" });
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,27 +38,25 @@ const Login = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message);
+        alert(data.message || "Login failed");
         return;
       }
 
-      // Save logged-in user
-      localStorage.setItem(
-        "payroll_user",
-        JSON.stringify({
-          email: data.email,
-          role: data.role
-        })
-      );
+      // ✅ Update AuthContext
+      login({
+        email: data.email,
+        role: data.role
+      });
 
-      // Navigate based on role
-      navigate(
-        data.role === "admin"
-          ? "/admin-dashboard"
-          : "/employee-dashboard"
-      );
-    } catch (err) {
-      alert("Server error");
+      // ✅ Navigate correctly
+      if (data.role === "admin") {
+        navigate("/admin-dashboard", { replace: true });
+      } else {
+        navigate("/employee-dashboard", { replace: true });
+      }
+
+    } catch (error) {
+      alert("Backend server not running");
     }
   };
 
@@ -60,59 +64,35 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card fade-in">
         <div className="login-header">
-          <h2 className="login-title">
-            {role === "admin" ? "Admin" : "Employee"} Login
-          </h2>
-          <p className="login-subtitle">Welcome back, please sign in</p>
+          <h2>{role === "admin" ? "Admin" : "Employee"} Login</h2>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <Input
-              label="Email Address"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <Input
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
 
-          <div className="form-group">
-            <Input
-              label="Password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <Input
+            label="Password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
 
-          <Button
-            type="submit"
-            variant="primary"
-            className="btn-modern btn-primary w-full"
-          >
+          <Button type="submit" variant="primary" className="w-full">
             Sign In
           </Button>
         </form>
 
         <div className="login-footer">
-          {role !== "admin" && (
-            <p>
-              Don't have an account?{" "}
-              <Link
-                to={`/register?role=${role}`}
-                className="link-highlight"
-              >
-                Register here
-              </Link>
-            </p>
-          )}
-          <Link to="/" className="back-link">
-            ← Back to Role Selection
-          </Link>
+          <Link to="/">← Back</Link>
         </div>
       </div>
     </div>

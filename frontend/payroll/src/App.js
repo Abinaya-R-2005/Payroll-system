@@ -1,6 +1,5 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar";
@@ -20,7 +19,7 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   const { user } = useAuth();
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/login?role=${allowedRole}`} replace />;
   }
 
   if (allowedRole && user.role !== allowedRole) {
@@ -37,13 +36,13 @@ function App() {
       <Navbar />
 
       <Routes>
-        {/* Public Pages */}
+        {/* Public */}
         <Route path="/" element={<Home />} />
         <Route path="/role" element={<RoleSelection />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Pages */}
+        {/* Protected */}
         <Route
           path="/admin-dashboard"
           element={
