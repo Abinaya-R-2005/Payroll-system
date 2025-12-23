@@ -1,106 +1,150 @@
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import Button from '../components/Button';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const EmployeeDashboard = () => {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showMenu, setShowMenu] = useState(false);
 
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
+  const displayName = user?.fullName || "Employee";
 
-    return (
-        <div style={{ padding: '40px 20px' }} className="fade-in">
-            <div className="container">
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '30px',
-                    paddingBottom: '20px',
-                    borderBottom: '1px solid var(--border-color)'
-                }}>
-                    <div>
-                        <h1 className="title-gradient" style={{ fontSize: '2rem' }}>Employee Portal</h1>
-                        <p style={{ color: 'var(--text-muted)' }}>Welcome back, view your financial records</p>
-                    </div>
-                    <Button onClick={handleLogout} variant="secondary">Sign Out</Button>
-                </div>
+  return (
+    <div style={styles.page}>
+      <div style={styles.glassCard}>
 
-                <div className="glass-panel">
-                    <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.5rem' }}>Financial Overview</h2>
+        {/* Top Bar */}
+        <div style={styles.topBar}>
+          <h2 style={styles.welcome}>Welcome, {displayName} 👋</h2>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px' }}>
-                        <div style={{
-                            padding: '30px',
-                            background: '#fff',
-                            borderRadius: 'var(--radius)',
-                            border: '1px solid var(--border-color)',
-                            boxShadow: 'var(--shadow-sm)'
-                        }}>
-                            <h3 style={{
-                                fontSize: '0.85rem',
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                fontWeight: '600'
-                            }}>Latest Net Pay</h3>
-                            <p style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--primary)', marginTop: '10px' }}>$3,200.00</p>
-                            <span style={{
-                                display: 'inline-block',
-                                marginTop: '10px',
-                                padding: '4px 12px',
-                                borderRadius: '20px',
-                                background: '#dcfce7',
-                                color: '#166534',
-                                fontSize: '0.8rem',
-                                fontWeight: '600'
-                            }}>Paid • Dec 25, 2025</span>
-                        </div>
-
-                        <div style={{
-                            padding: '30px',
-                            background: '#fff',
-                            borderRadius: 'var(--radius)',
-                            border: '1px solid var(--border-color)',
-                            boxShadow: 'var(--shadow-sm)'
-                        }}>
-                            <h3 style={{
-                                fontSize: '0.85rem',
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                fontWeight: '600'
-                            }}>YTD Earnings</h3>
-                            <p style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--text-main)', marginTop: '10px' }}>$42,500.00</p>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '5px' }}>Gross Income</p>
-                        </div>
-
-                        <div style={{
-                            padding: '30px',
-                            background: '#fff',
-                            borderRadius: 'var(--radius)',
-                            border: '1px solid var(--border-color)',
-                            boxShadow: 'var(--shadow-sm)'
-                        }}>
-                            <h3 style={{
-                                fontSize: '0.85rem',
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                fontWeight: '600'
-                            }}>Tax Deductions (YTD)</h3>
-                            <p style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--secondary)', marginTop: '10px' }}>$8,450.00</p>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '5px' }}>~20% Rate</p>
-                        </div>
-                    </div>
-                </div>
+          {/* Profile Icon */}
+          <div style={{ position: "relative" }}>
+            <div
+              style={styles.profileCircle}
+              onClick={() => setShowMenu(!showMenu)}
+            >
+              {displayName.charAt(0).toUpperCase()}
             </div>
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+              <div style={styles.dropdown}>
+                <p style={styles.userName}>{displayName}</p>
+                <p style={styles.userEmail}>{user?.email}</p>
+
+                <hr />
+
+                <button
+                  style={styles.menuBtn}
+                  onClick={() => navigate("/employee-profile")}
+                >
+                  View Profile
+                </button>
+
+                <button
+                  style={styles.menuBtn}
+                  onClick={() => navigate("/payslip")}
+                >
+                  View Payslip
+                </button>
+
+                <button style={styles.logoutBtn} onClick={logout}>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-    );
+
+        {/* Content */}
+        <p style={styles.text}>
+          Your dashboard is ready. Payslip and other modules will be available
+          once the admin completes setup.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/* 🔹 Internal CSS */
+const styles = {
+  page: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  glassCard: {
+    width: "900px",
+    background: "rgba(255,255,255,0.15)",
+    backdropFilter: "blur(12px)",
+    padding: "30px",
+    borderRadius: "16px",
+    color: "#fff",
+  },
+  topBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  welcome: {
+    margin: 0,
+  },
+  profileCircle: {
+    width: "45px",
+    height: "45px",
+    borderRadius: "50%",
+    background: "rgba(255,255,255,0.3)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
+  dropdown: {
+    position: "absolute",
+    top: "55px",
+    right: 0,
+    background: "#fff",
+    color: "#000",
+    borderRadius: "10px",
+    padding: "15px",
+    width: "220px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+    zIndex: 100,
+  },
+  userName: {
+    fontWeight: "bold",
+    margin: 0,
+  },
+  userEmail: {
+    fontSize: "0.85rem",
+    color: "#555",
+    marginBottom: "10px",
+  },
+  menuBtn: {
+    width: "100%",
+    padding: "8px",
+    marginTop: "8px",
+    border: "none",
+    background: "#f1f1f1",
+    cursor: "pointer",
+    borderRadius: "5px",
+  },
+  logoutBtn: {
+    width: "100%",
+    padding: "8px",
+    marginTop: "10px",
+    border: "none",
+    background: "#e74c3c",
+    color: "#fff",
+    cursor: "pointer",
+    borderRadius: "5px",
+  },
+  text: {
+    marginTop: "40px",
+    textAlign: "center",
+  },
 };
 
 export default EmployeeDashboard;

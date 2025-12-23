@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar";
 import BackgroundSlider from "./components/BackgroundSlider";
+import EmployeeProfile from "./pages/EmployeeProfile";
 
 import Home from "./pages/Home";
 import RoleSelection from "./pages/RoleSelection";
@@ -15,9 +16,11 @@ import EmployeeSuccess from "./pages/EmployeeSuccess";
 
 import "./App.css";
 
-/* 🔐 Protected Route */
+/* 🔐 Protected Route Component */
 const ProtectedRoute = ({ children, allowedRole }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return null; // wait for auth check
 
   if (!user) {
     return <Navigate to={`/login?role=${allowedRole}`} replace />;
@@ -43,10 +46,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* ✅ SUCCESS PAGE (PUBLIC) */}
+        {/* ✅ Employee Registration Success (Public) */}
         <Route path="/employee-success" element={<EmployeeSuccess />} />
 
-        {/* 🔐 Protected Routes */}
+        {/* 🔐 Admin Dashboard */}
         <Route
           path="/admin-dashboard"
           element={
@@ -56,6 +59,7 @@ function App() {
           }
         />
 
+        {/* 🔐 Common Employee Dashboard */}
         <Route
           path="/employee-dashboard"
           element={
@@ -64,6 +68,17 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/employee-profile"
+  element={
+    <ProtectedRoute allowedRole="employee">
+      <EmployeeProfile />
+    </ProtectedRoute>
+  }
+/>
+
+        {/* ❌ Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );

@@ -134,6 +134,7 @@ app.post("/register", async (req, res) => {
 
 
 /* ---------- LOGIN (ADMIN & EMPLOYEE) ---------- */
+/* ---------- LOGIN (ADMIN & EMPLOYEE) ---------- */
 app.post("/login", async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -155,14 +156,19 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    // ✅ SEND NAME TO FRONTEND
     res.json({
-      role,
-      email: user.email
+      role: user.role || role,
+      email: user.email,
+      fullName: user.fullName,      // 👈 IMPORTANT
+      employeeId: user.employeeId   // 👈 optional but useful
     });
+
   } catch (err) {
     res.status(500).json({ message: "Login error" });
   }
 });
+
 app.get("/api/employees", async (req, res) => {
   try {
     const employees = await Employee.find({}, { password: 0, __v: 0 });
