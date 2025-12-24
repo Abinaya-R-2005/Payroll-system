@@ -87,16 +87,9 @@ const Login = () => {
             required
           />
           <div style={{ textAlign: "right", marginBottom: "12px" }}>
-  <Link
-    to="/forgot-password"
-    style={{
-      fontSize: "14px",
-      color: "#007bff",
-      textDecoration: "none"
-    }}
-  >
+  <a href="/forgot-password" className="forgot-link">
     Forgot Password?
-  </Link>
+  </a>
 </div>
 
 
