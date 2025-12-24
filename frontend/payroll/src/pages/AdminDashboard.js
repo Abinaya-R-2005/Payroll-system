@@ -48,10 +48,23 @@ const AdminDashboard = () => {
         navigate('/');
     };
 
-    const handleEmployeeSelect = (employee) => {
-        setSelectedEmployee(employee);
-        setViewMode('config');
-    };
+    const handleEmployeeSelect = async (employee) => {
+    try {
+        const res = await fetch(
+            `http://localhost:5000/api/employees/${employee.employeeId}`
+        );
+
+        if (!res.ok) {
+            throw new Error("Failed to fetch employee");
+        }
+
+        const fullEmployee = await res.json();
+        setSelectedEmployee(fullEmployee);
+    } catch (err) {
+        console.error("Failed to fetch employee details", err);
+    }
+};
+
 
     const handlePayrollUpdate = (employeeId, payrollData) => {
         console.log(`Updating payroll for ${employeeId}:`, payrollData);
@@ -77,7 +90,8 @@ const AdminDashboard = () => {
 
         // Attempt to POST to backend; if unavailable, just log and continue
         try {
-            const res = await fetch('/api/attendance', {
+            const res = await fetch('http://localhost:5000/api/attendance', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ employeeId, date, status })
