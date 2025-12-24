@@ -1,10 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "../styles/Home.css";
+import heroMan from "../assets/hero-man.png";
 
 const Home = () => {
   return (
     <div className="home-container">
+<<<<<<< HEAD
 
       {/* Hero Section */}
       <section className="hero">
@@ -17,8 +19,30 @@ const Home = () => {
           <Link to="/role">
             <button className="primary-btn">Create Account</button>
           </Link>
+=======
+      {/* Hero Section */}
+      <section className="hero">
+        <div className="hero-wrapper">
+          {/* Left Content */}
+          <div className="hero-content">
+            <h1>Smart Payroll Management</h1>
+            <p>
+              A simple and secure payroll system to manage employee salaries,
+              attendance, deductions, and payslips efficiently.
+            </p>
+            <Link to="/role">
+              <button className="primary-btn">Create Account</button>
+            </Link>
+          </div>
+
+          {/* Right Image */}
+          <div className="hero-image">
+  <img src={heroMan} alt="Payroll Professional" />
+</div>
+>>>>>>> 49c83d320a8f36a456d2c9f3e5510e8f2d6d0391
         </div>
       </section>
+      
 
       {/* About Section */}
       <section className="about">
@@ -50,7 +74,6 @@ const Home = () => {
       <footer className="footer">
         <p>© 2025 Fly Towards Digital Innovation. All rights reserved.</p>
       </footer>
-
     </div>
   );
 };
