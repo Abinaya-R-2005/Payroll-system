@@ -39,16 +39,16 @@ const AttendancePanel = ({ employee, onMarkAttendance, onMonthChange, initialSta
     if (!employee) return null;
 
     const handlePrev = () => {
-    const d = new Date(year, month - 1, 1);
-    setCurrentMonth(d);
-    onMonthChange?.(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
-};
+        const d = new Date(year, month - 1, 1);
+        setViewDate(d);
+        onMonthChange?.(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    };
 
-const handleNext = () => {
-    const d = new Date(year, month + 1, 1);
-    setCurrentMonth(d);
-    onMonthChange?.(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
-};
+    const handleNext = () => {
+        const d = new Date(year, month + 1, 1);
+        setViewDate(d);
+        onMonthChange?.(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    };
 
 
     const handleMonthChange = (e) => {
