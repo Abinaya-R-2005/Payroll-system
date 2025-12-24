@@ -1,13 +1,19 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 const weekdayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const STATUS_COLOR = {
+  P: "#16a34a",
+  L: "#f97316",
+  A: "#ef4444"
+};
 
 const AttendancePanel = ({
   employee,
   onMarkAttendance,
   onMonthChange,
   initialStatuses = {},
-  role = "admin" // pass role from parent
+  role = "admin"
 }) => {
   const today = new Date();
 
@@ -17,7 +23,7 @@ const AttendancePanel = ({
 
   const [statuses, setStatuses] = useState({});
 
-  /* ---------- SYNC DATA ---------- */
+  /* ---------- SYNC ATTENDANCE DATA ---------- */
   useEffect(() => {
     setStatuses(initialStatuses || {});
   }, [initialStatuses, employee?.employeeId]);
@@ -39,52 +45,61 @@ const AttendancePanel = ({
   }, [year, month, onMonthChange]);
 
   /* ---------- NAVIGATION ---------- */
-  const handlePrev = () =>
+  const handlePrev = () => {
     setViewDate(new Date(year, month - 1, 1));
+  };
 
-  const handleNext = () =>
+  const handleNext = () => {
     setViewDate(new Date(year, month + 1, 1));
+  };
 
-  /* ---------- CALENDAR ---------- */
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstWeekday = new Date(year, month, 1).getDay();
-
-  const cells = Array.from({ length: 42 }).map((_, i) => {
-    const day = i - firstWeekday + 1;
-    if (day < 1 || day > daysInMonth) return null;
-
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return { day, dateStr };
-  });
-
-  const markStatus = (date, status) => {
+  /* ---------- MARK ATTENDANCE ---------- */
+  const markStatus = (dateStr, value) => {
     if (!isEditable) return;
 
-    setStatuses(prev => ({ ...prev, [date]: status }));
-    onMarkAttendance(employee.employeeId, date, status);
+    setStatuses(prev => ({
+      ...prev,
+      [dateStr]: value
+    }));
+
+    onMarkAttendance(employee.employeeId, dateStr, value);
   };
 
-  const statusColor = {
-    P: "#16a34a",
-    A: "#ef4444",
-    L: "#f97316"
-  };
+  /* ---------- CALENDAR LOGIC ---------- */
+  const daysInMonth = useMemo(
+    () => new Date(year, month + 1, 0).getDate(),
+    [year, month]
+  );
+
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const totalCells = firstWeekday + daysInMonth;
+  const weeks = Math.ceil(totalCells / 7);
+
+  const cells = new Array(weeks * 7).fill(null).map((_, idx) => {
+    const dayNumber = idx - firstWeekday + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) return null;
+
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+      dayNumber
+    ).padStart(2, "0")}`;
+
+    return { day: dayNumber, dateStr };
+  });
 
   if (!employee) return null;
 
+  /* ---------- UI ---------- */
   return (
     <div style={{ background: "#fff", padding: 16, borderRadius: 10 }}>
 
-      {/* ---------- HEADER ---------- */}
+      {/* HEADER */}
       <div style={{
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 15
+        marginBottom: 12
       }}>
-        <h3>
-          Attendance — {employee.fullName}
-        </h3>
+        <h3>Attendance — {employee.fullName}</h3>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={handlePrev}>◀</button>
@@ -95,14 +110,14 @@ const AttendancePanel = ({
         </div>
       </div>
 
-      {/* ---------- INFO ---------- */}
+      {/* INFO */}
       <p style={{ fontSize: 12, color: "#555" }}>
         {isEditable
           ? "🟢 Editing enabled (current month)"
           : "🔒 View only (past / future month)"}
       </p>
 
-      {/* ---------- CALENDAR ---------- */}
+      {/* CALENDAR */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(7, 1fr)",
@@ -118,7 +133,7 @@ const AttendancePanel = ({
               key={i}
               style={{
                 border: "1px solid #ddd",
-                minHeight: 70,
+                minHeight: 75,
                 padding: 6,
                 borderRadius: 6
               }}
@@ -128,7 +143,7 @@ const AttendancePanel = ({
               {statuses[cell.dateStr] && (
                 <div style={{
                   height: 5,
-                  background: statusColor[statuses[cell.dateStr]],
+                  background: STATUS_COLOR[statuses[cell.dateStr]],
                   marginTop: 4
                 }} />
               )}
@@ -144,7 +159,7 @@ const AttendancePanel = ({
                         fontSize: 10,
                         background:
                           statuses[cell.dateStr] === s
-                            ? statusColor[s]
+                            ? STATUS_COLOR[s]
                             : "#eee",
                         color:
                           statuses[cell.dateStr] === s ? "#fff" : "#000"

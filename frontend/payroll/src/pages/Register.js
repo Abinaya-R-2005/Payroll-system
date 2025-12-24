@@ -95,7 +95,7 @@ const Register = () => {
     <div className="register-container fade-in">
       <div className="register-card">
         <div className="register-header">
-          <h2 className="register-title">Employee Registration</h2>
+          <h2 className="register-title">{role === "admin" ? "Admin" : "Employee"} Registration</h2>
           <p style={{ color: "var(--text-muted)" }}>
             Complete your profile to join the system
           </p>

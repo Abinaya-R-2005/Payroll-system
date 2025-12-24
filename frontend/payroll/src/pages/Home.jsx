@@ -5,11 +5,11 @@ import "../styles/Home.css";
 const Home = () => {
   return (
     <div className="home-container">
-      
+
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
-          <h1>Smart Payroll Management</h1>
+          <h1>Fly Payroll Management</h1>
           <p>
             A simple and secure payroll system to manage employee salaries,
             attendance, deductions, and payslips efficiently.
@@ -48,7 +48,7 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="footer">
-        <p>© 2025 Payroll Management System. All rights reserved.</p>
+        <p>© 2025 Fly Towards Digital Innovation. All rights reserved.</p>
       </footer>
 
     </div>
