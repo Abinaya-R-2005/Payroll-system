@@ -139,7 +139,7 @@ const EmployeeDashboard = () => {
 
     if (loading && !employeeData) return <div style={{ padding: '40px' }}>Loading your dashboard...</div>;
 
-    const monthLabel = viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+
 
     return (
         <div style={{ padding: '40px 20px' }} className="fade-in">
@@ -159,16 +159,56 @@ const EmployeeDashboard = () => {
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                         <div className="fly-card" style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '10px 20px', borderRadius: '50px' }}>
                             <button onClick={handlePrev} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--primary)' }}>◀</button>
-                            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', minWidth: '140px', textAlign: 'center' }}>{monthLabel}</span>
+
+                            <select
+                                value={month}
+                                onChange={(e) => setViewDate(new Date(year, parseInt(e.target.value), 1))}
+                                style={{
+                                    border: 'none',
+                                    background: 'transparent',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    color: 'var(--text-main)',
+                                    cursor: 'pointer',
+                                    outline: 'none',
+                                    appearance: 'none',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => (
+                                    <option key={m} value={i}>{m}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={year}
+                                onChange={(e) => setViewDate(new Date(parseInt(e.target.value), month, 1))}
+                                style={{
+                                    border: 'none',
+                                    background: 'transparent',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    color: 'var(--text-main)',
+                                    cursor: 'pointer',
+                                    outline: 'none',
+                                    paddingLeft: '5px'
+                                }}
+                            >
+                                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+
                             <button onClick={handleNext} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--primary)' }}>▶</button>
                         </div>
-                        <Button onClick={() => setSearchParams({ v: 'slip' })} variant="primary" style={{ padding: '12px 28px' }}>View Pay Slip</Button>
+                        <Button onClick={() => setSearchParams({ v: 'slip' })} className="btn-payslip">
+                            📄 View Pay Slip
+                        </Button>
                         <Button
-                          onClick={() => navigate('/messages')}
-                          variant="primary"
-                          style={{ padding: '12px 24px' }}
+                            onClick={() => navigate('/messages')}
+                            className="btn-message"
                         >
-                          Messages
+                            💬 Messages
                         </Button>
                         <Button className="logout-btn" onClick={() => { logout(); navigate('/login'); }} variant="secondary" style={{ padding: '12px 20px' }}>Logout</Button>
                     </div>

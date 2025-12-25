@@ -57,80 +57,80 @@ const AdminDashboard = () => {
     }, []);
 
     const handleEmployeeSelect = async (employee) => {
-    try {
-        const res = await fetch(
-            `http://localhost:5000/api/employees/${employee.employeeId}`
-        );
+        try {
+            const res = await fetch(
+                `http://localhost:5000/api/employees/${employee.employeeId}`
+            );
 
-        if (!res.ok) {
-            throw new Error("Failed to fetch employee");
+            if (!res.ok) {
+                throw new Error("Failed to fetch employee");
+            }
+
+            const fullEmployee = await res.json();
+            setSelectedEmployee(fullEmployee);
+        } catch (err) {
+            console.error("Failed to fetch employee details", err);
         }
+    };
 
-        const fullEmployee = await res.json();
-        setSelectedEmployee(fullEmployee);
-    } catch (err) {
-        console.error("Failed to fetch employee details", err);
-    }
-};
-
-const handlePayrollUpdate = async (employeeId, payrollData) => {
-  const [year, month] = viewingMonth.split('-').map(Number);
-  const daysInMonth = new Date(year, month, 0).getDate();
-
-  const currentEmpAttendance = attendanceMap[employeeId] || {};
-  const presentDays = daysInMonth;
-
-  const gross =
-  (+payrollData.basicSalary || 0) +
-  (+payrollData.hra || 0) +
-  (+payrollData.specialAllowance || 0) +
-  (+payrollData.travelAllowance || 0) +
-  (+payrollData.allowances || 0) +
-  (+payrollData.bonus || 0) +
-  (+payrollData.insteadDue || 0);
+    const handlePayrollUpdate = async (employeeId, payrollData) => {
+        const [year, month] = viewingMonth.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
 
 
-  const proRatedGross = (gross / daysInMonth) * presentDays;
-  const taxAmount = proRatedGross * ((+payrollData.tax || 0) / 100);
-  const netSalary = proRatedGross - taxAmount;
+        const presentDays = daysInMonth;
 
-  const payslipPayload = {
-    employeeId,
-    month: viewingMonth,
+        const gross =
+            (+payrollData.basicSalary || 0) +
+            (+payrollData.hra || 0) +
+            (+payrollData.specialAllowance || 0) +
+            (+payrollData.travelAllowance || 0) +
+            (+payrollData.allowances || 0) +
+            (+payrollData.bonus || 0) +
+            (+payrollData.insteadDue || 0);
 
-    earnings: {
-  basicSalary: payrollData.basicSalary,
-  hra: payrollData.hra,
-  specialAllowance: payrollData.specialAllowance,
-  travelAllowance: payrollData.travelAllowance,
-  allowances: payrollData.allowances,
-  bonus: payrollData.bonus,
-  insteadDue: payrollData.insteadDue
-},
 
-    deductions: {
-      taxPercent: payrollData.tax,
-      taxAmount
-    },
+        const proRatedGross = (gross / daysInMonth) * presentDays;
+        const taxAmount = proRatedGross * ((+payrollData.tax || 0) / 100);
+        const netSalary = proRatedGross - taxAmount;
 
-    attendance: {
-      totalDays: daysInMonth,
-      presentDays
-    },
+        const payslipPayload = {
+            employeeId,
+            month: viewingMonth,
 
-    grossSalary: proRatedGross,
-    netSalary
-  };
+            earnings: {
+                basicSalary: payrollData.basicSalary,
+                hra: payrollData.hra,
+                specialAllowance: payrollData.specialAllowance,
+                travelAllowance: payrollData.travelAllowance,
+                allowances: payrollData.allowances,
+                bonus: payrollData.bonus,
+                insteadDue: payrollData.insteadDue
+            },
 
-  await fetch("http://localhost:5000/api/payslip", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payslipPayload)
-  });
+            deductions: {
+                taxPercent: payrollData.tax,
+                taxAmount
+            },
 
-  setPendingPayrollData(payrollData);
-  setSearchParams({ v: "slip" });
-};
+            attendance: {
+                totalDays: daysInMonth,
+                presentDays
+            },
+
+            grossSalary: proRatedGross,
+            netSalary
+        };
+
+        await fetch("http://localhost:5000/api/payslip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payslipPayload)
+        });
+
+        setPendingPayrollData(payrollData);
+        setSearchParams({ v: "slip" });
+    };
 
 
     const handleMarkAttendance = async (employeeId, date, status) => {

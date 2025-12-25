@@ -53,43 +53,34 @@ const AdminMessageViewer = ({ messages, onStatusChange, onDelete, loading }) => 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading messages...</div>;
 
     return (
-        <div style={{ padding: '20px' }}>
-            <div style={{ marginBottom: '30px' }}>
-                <h2 style={{ color: 'var(--primary)', marginBottom: '20px' }}>📬 Messages</h2>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginBottom: '25px' }}>
-                    <div className="fly-card" style={{ padding: '20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>New Messages</div>
-                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#dc2626', marginTop: '10px' }}>{newCount}</div>
+        <div style={{ padding: '0 20px 40px' }}>
+            <div style={{ marginBottom: '40px' }}>
+                <div className="admin-stats-grid">
+                    <div className="stat-card">
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>New Messages</div>
+                        <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#dc2626', marginTop: '10px' }}>{newCount}</div>
                     </div>
-                    <div className="fly-card" style={{ padding: '20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Open</div>
-                        <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary)', marginTop: '10px' }}>{openCount}</div>
+                    <div className="stat-card">
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Open Tickets</div>
+                        <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--primary)', marginTop: '10px' }}>{openCount}</div>
                     </div>
-                    <div className="fly-card" style={{ padding: '20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Solved</div>
-                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#10b981', marginTop: '10px' }}>{solvedCount}</div>
+                    <div className="stat-card">
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Solved</div>
+                        <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#10b981', marginTop: '10px' }}>{solvedCount}</div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                     {['open', 'solved', 'all'].map(f => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
-                            style={{
-                                padding: '8px 16px',
-                                borderRadius: '20px',
-                                border: 'none',
-                                background: filter === f ? 'var(--primary)' : '#e2e8f0',
-                                color: filter === f ? '#fff' : 'var(--text-main)',
-                                cursor: 'pointer',
-                                fontWeight: '600',
-                                fontSize: '0.9rem',
-                                transition: 'all 0.2s'
-                            }}
+                            className={`filter-btn ${filter === f ? 'active' : 'inactive'}`}
                         >
-                            {f.charAt(0).toUpperCase() + f.slice(1)}
+                            {f.charAt(0).toUpperCase() + f.slice(1)} ({
+                                f === 'all' ? messages.length :
+                                    f === 'open' ? openCount : solvedCount
+                            })
                         </button>
                     ))}
                 </div>
@@ -99,135 +90,105 @@ const AdminMessageViewer = ({ messages, onStatusChange, onDelete, loading }) => 
                 {filteredMessages.length === 0 ? (
                     <div style={{
                         textAlign: 'center',
-                        padding: '60px 20px',
+                        padding: '80px 20px',
                         background: '#f8fafc',
                         borderRadius: 'var(--radius)',
-                        color: 'var(--text-muted)'
+                        color: 'var(--text-muted)',
+                        border: '2px dashed var(--border-color)'
                     }}>
-                        <p style={{ fontSize: '3rem', marginBottom: '10px' }}>📭</p>
-                        <p style={{ fontSize: '1.1rem', fontWeight: '600' }}>No messages in this category</p>
+                        <p style={{ fontSize: '4rem', marginBottom: '15px', opacity: 0.5 }}>📭</p>
+                        <p style={{ fontSize: '1.2rem', fontWeight: '600' }}>No messages found in this category</p>
                     </div>
                 ) : (
                     filteredMessages.map(msg => (
                         <div
                             key={msg._id}
-                            style={{
-                                background: msg.isRead ? '#fff' : '#f0f9ff',
-                                border: `2px solid ${msg.isRead ? 'var(--border-color)' : 'var(--primary)'}`,
-                                borderRadius: 'var(--radius)',
-                                padding: '20px',
-                                marginBottom: '15px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
+                            className={`message-card ${!msg.isRead ? 'unread' : ''}`}
                             onClick={() => setExpandedId(expandedId === msg._id ? null : msg._id)}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '15px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '20px' }}>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                        <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', fontWeight: '700' }}>{msg.title}</h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                                        <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.15rem', fontWeight: '700' }}>{msg.title}</h3>
                                         {!msg.isRead && (
-                                            <span style={{
-                                                background: '#dc2626',
-                                                color: '#fff',
-                                                fontSize: '0.7rem',
-                                                padding: '2px 8px',
-                                                borderRadius: '50px',
-                                                fontWeight: '700',
-                                                textTransform: 'uppercase'
-                                            }}>New</span>
+                                            <span className="status-badge status-new">NEW</span>
                                         )}
-                                        <span style={{
-                                            background: msg.status === 'solved' ? '#10b981' : '#f59e0b',
-                                            color: '#fff',
-                                            fontSize: '0.7rem',
-                                            padding: '2px 8px',
-                                            borderRadius: '50px',
-                                            fontWeight: '700',
-                                            textTransform: 'uppercase'
-                                        }}>{msg.status}</span>
+                                        <span className={`status-badge status-${msg.status}`}>
+                                            {msg.status}
+                                        </span>
                                     </div>
-                                    <p style={{ margin: '5px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                        From: <strong>{msg.fromName}</strong> | Category: <strong>{msg.category}</strong>
+                                    <p style={{ margin: '6px 0', fontSize: '0.95rem', color: '#475569' }}>
+                                        <span style={{ fontWeight: '600' }}>{msg.fromName}</span> <span style={{ color: '#94a3b8' }}>•</span> {msg.category}
                                     </p>
-                                    <p style={{ margin: '5px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                    <p style={{ margin: '6px 0', fontSize: '0.85rem', color: '#94a3b8' }}>
                                         {new Date(msg.createdAt).toLocaleString()}
                                     </p>
                                 </div>
-                                <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>
-                                    {expandedId === msg._id ? '▼' : '▶'}
+                                <span style={{
+                                    fontSize: '1.5rem',
+                                    color: '#cbd5e1',
+                                    transition: 'transform 0.3s',
+                                    transform: expandedId === msg._id ? 'rotate(90deg)' : 'rotate(0deg)'
+                                }}>
+                                    ▶
                                 </span>
                             </div>
 
                             {expandedId === msg._id && (
-                                <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                                    <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
-                                        <p style={{ margin: 0, color: 'var(--text-main)', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{msg.message}</p>
+                                <div className="fade-in" style={{ marginTop: '25px', borderTop: '1px solid var(--border-color)', paddingTop: '25px' }}>
+                                    <h4 style={{ fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '10px' }}>Message Content</h4>
+                                    <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '25px', lineHeight: '1.7', color: '#334155' }}>
+                                        {msg.message}
                                     </div>
 
                                     {msg.response && (
-                                        <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #dcfce7' }}>
-                                            <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: '700', color: '#166534' }}>✅ Admin Response:</p>
-                                            <p style={{ margin: 0, color: '#166534', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{msg.response}</p>
+                                        <div className="admin-response">
+                                            <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: '800', color: '#166534' }}>✅ Your Response:</p>
+                                            <p style={{ margin: 0, color: '#166534', whiteSpace: 'pre-wrap', lineHeight: '1.7' }}>{msg.response}</p>
                                         </div>
                                     )}
 
                                     {msg.status === 'open' && (
-                                        <div style={{ marginTop: '15px' }}>
-                                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Your Response</label>
+                                        <div className="response-container">
+                                            <label className="form-label">Write Response</label>
                                             <textarea
+                                                className="form-textarea"
                                                 value={responseText[msg._id] || ''}
                                                 onChange={(e) => setResponseText(prev => ({ ...prev, [msg._id]: e.target.value }))}
-                                                placeholder="Type your response here..."
-                                                rows="4"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '10px',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid var(--border-color)',
-                                                    fontSize: '0.95rem',
-                                                    outline: 'none',
-                                                    boxSizing: 'border-box',
-                                                    fontFamily: 'inherit',
-                                                    resize: 'vertical'
-                                                }}
+                                                placeholder="Type your professional response here..."
+                                                rows="5"
                                             />
-                                            <button
-                                                onClick={() => handleRespond(msg._id)}
-                                                style={{
-                                                    background: 'var(--primary)',
-                                                    color: '#fff',
-                                                    padding: '10px 20px',
-                                                    borderRadius: '8px',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    fontWeight: '600',
-                                                    marginTop: '10px',
-                                                    fontSize: '0.95rem'
-                                                }}
-                                            >
-                                                ✓ Mark as Solved & Respond
-                                            </button>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '15px' }}>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleRespond(msg._id); }}
+                                                    className="btn-modern btn-primary"
+                                                >
+                                                    ✓ Mark Solved & Send
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
-                                    <button
-                                        onClick={() => handleDelete(msg._id)}
-                                        style={{
-                                            background: '#fee2e2',
-                                            color: '#991b1b',
-                                            padding: '8px 16px',
-                                            borderRadius: '8px',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontWeight: '600',
-                                            marginTop: '10px',
-                                            marginLeft: '10px',
-                                            fontSize: '0.9rem'
-                                        }}
-                                    >
-                                        🗑️ Delete
-                                    </button>
+                                    <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(msg._id); }}
+                                            style={{
+                                                background: '#fee2e2',
+                                                color: '#b91c1c',
+                                                padding: '10px 20px',
+                                                borderRadius: '50px',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                fontWeight: '700',
+                                                fontSize: '0.9rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}
+                                        >
+                                            🗑️ Delete Ticket
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

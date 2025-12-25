@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import MessageForm from "../components/MessageForm";
 import AdminMessageViewer from "../components/AdminMessageViewer";
+import "../styles/Messages.css";
+import "../styles/Button.css";
 
 const Messages = () => {
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ const Messages = () => {
   }, [user]);
 
   // Fetch messages
-  const fetchMessages = async () => {
+  const fetchMessages = React.useCallback(async () => {
     try {
       setLoading(true);
       const role = user?.role || "employee";
@@ -57,14 +59,14 @@ const Messages = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Initial fetch only (no auto-refresh)
   useEffect(() => {
     if (!user?.role) return;
-    
+
     fetchMessages();
-  }, [user?.role, user?.employeeId, user?.email]);
+  }, [user?.role, user?.employeeId, user?.email, fetchMessages]);
 
   if (!user) return null;
 
@@ -117,49 +119,30 @@ const Messages = () => {
         )}
 
         {isEmployee && messages.length > 0 && (
-          <div style={{ marginTop: "40px" }}>
+          <div className="history-section">
             <h2 style={{ color: "var(--primary)", marginBottom: "20px" }}>📤 Your Messages History</h2>
-            <div style={{ display: "grid", gap: "15px" }}>
+            <div style={{ display: "grid", gap: "20px" }}>
               {messages.map(msg => (
-                <div
-                  key={msg._id}
-                  style={{
-                    background: "#fff",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "var(--radius)",
-                    padding: "20px",
-                    boxShadow: "var(--shadow-sm)"
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "10px" }}>
+                <div key={msg._id} className="message-card">
+                  <div className="message-header">
                     <div>
-                      <h3 style={{ margin: 0, color: "var(--text-main)", fontSize: "1.1rem" }}>{msg.title}</h3>
+                      <h3 style={{ margin: 0, color: "var(--text-main)", fontSize: "1.2rem", fontWeight: "700" }}>{msg.title}</h3>
                       <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                        {new Date(msg.createdAt).toLocaleString()}
+                        {new Date(msg.createdAt).toLocaleString()} • {msg.category}
                       </p>
                     </div>
-                    <span style={{
-                      background: msg.status === "solved" ? "#dcfce7" : msg.status === "open" ? "#fef3c7" : "#e5e7eb",
-                      color: msg.status === "solved" ? "#166534" : msg.status === "open" ? "#92400e" : "#374151",
-                      padding: "4px 12px",
-                      borderRadius: "20px",
-                      fontSize: "0.8rem",
-                      fontWeight: "700"
-                    }}>
+                    <span className={`status-badge status-${msg.status}`}>
                       {msg.status.toUpperCase()}
                     </span>
                   </div>
-                  <p style={{ margin: "10px 0", color: "var(--text-main)", lineHeight: "1.6" }}>{msg.message}</p>
+                  <p style={{ margin: "10px 0", color: "var(--text-main)", lineHeight: "1.6", whiteSpace: "pre-wrap" }}>{msg.message}</p>
+
                   {msg.response && (
-                    <div style={{
-                      background: "#f0fdf4",
-                      border: "1px solid #dcfce7",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      marginTop: "10px"
-                    }}>
-                      <p style={{ margin: "0 0 5px 0", fontSize: "0.85rem", fontWeight: "700", color: "#166534" }}>Admin Response:</p>
-                      <p style={{ margin: 0, color: "#166534", fontSize: "0.95rem", whiteSpace: "pre-wrap", lineHeight: "1.5" }}>
+                    <div className="admin-response">
+                      <p style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: "800", color: "#166534", display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>👨‍💼</span> Admin Response:
+                      </p>
+                      <p style={{ margin: 0, color: "#15803d", fontSize: "0.95rem", whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
                         {msg.response}
                       </p>
                     </div>

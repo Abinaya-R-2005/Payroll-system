@@ -41,9 +41,9 @@ const MessageForm = ({ employee, onMessageSent }) => {
             setTitle('');
             setMessage('');
             setCategory('query');
-            
+
             if (onMessageSent) onMessageSent();
-            
+
             setTimeout(() => setSuccessMsg(''), 3000);
         } catch (err) {
             setErrorMsg('❌ Error sending message: ' + err.message);
@@ -53,38 +53,34 @@ const MessageForm = ({ employee, onMessageSent }) => {
     };
 
     return (
-        <div style={{
-            background: '#fff',
-            borderRadius: 'var(--radius)',
-            border: '1px solid var(--border-color)',
-            padding: '30px',
-            boxShadow: 'var(--shadow-sm)',
-            maxWidth: '600px',
-            margin: '0 auto'
-        }}>
-            <h2 style={{ color: 'var(--primary)', marginBottom: '20px', fontSize: '1.5rem' }}>📝 Send Query to Admin</h2>
+        <div className="message-form-card fade-in">
+            <h2 style={{ color: 'var(--primary)', marginBottom: '25px', fontSize: '1.6rem', textAlign: 'center' }}>📝 Send Query to Admin</h2>
 
             {successMsg && (
                 <div style={{
-                    background: '#dcfce7',
-                    color: '#166534',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
+                    background: '#ecfdf5',
+                    color: '#047857',
+                    padding: '16px',
+                    borderRadius: '12px',
                     marginBottom: '20px',
-                    border: '1px solid #86efac'
+                    border: '1px solid #6ee7b7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontWeight: '600'
                 }}>
-                    {successMsg}
+                    <span>✅</span> {successMsg}
                 </div>
             )}
 
             {errorMsg && (
                 <div style={{
-                    background: '#fee2e2',
-                    color: '#991b1b',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
+                    background: '#fef2f2',
+                    color: '#b91c1c',
+                    padding: '16px',
+                    borderRadius: '12px',
                     marginBottom: '20px',
-                    border: '1px solid #fca5a5'
+                    border: '1px solid #fecaca'
                 }}>
                     {errorMsg}
                 </div>
@@ -92,84 +88,48 @@ const MessageForm = ({ employee, onMessageSent }) => {
 
             <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Title</label>
+                    <label className="form-label">Title</label>
                     <input
                         type="text"
+                        className="form-input"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Brief subject of your query"
                         required
-                        style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border-color)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            boxSizing: 'border-box'
-                        }}
                     />
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Category</label>
+                    <label className="form-label">Category</label>
                     <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border-color)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            boxSizing: 'border-box'
-                        }}
+                        className="form-select"
                     >
-                        <option value="query">Query</option>
-                        <option value="error">Error/Issue</option>
-                        <option value="feedback">Feedback</option>
-                        <option value="other">Other</option>
+                        <option value="query">❓ General Query</option>
+                        <option value="error">⚠️ Error/Issue</option>
+                        <option value="feedback">💡 Feedback</option>
+                        <option value="other">📝 Other</option>
                     </select>
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', color: 'var(--text-main)' }}>Message</label>
+                <div style={{ marginBottom: '25px' }}>
+                    <label className="form-label">Message</label>
                     <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
+                        className="form-textarea text-area-resize"
                         placeholder="Describe your query or issue in detail..."
                         required
                         rows="6"
-                        style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border-color)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                            fontFamily: 'inherit',
-                            resize: 'vertical'
-                        }}
                     />
                 </div>
 
                 <button
                     type="submit"
                     disabled={sending}
-                    style={{
-                        background: 'var(--primary)',
-                        color: '#fff',
-                        padding: '12px 28px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        cursor: sending ? 'not-allowed' : 'pointer',
-                        opacity: sending ? 0.6 : 1,
-                        transition: 'all 0.2s'
-                    }}
+                    className={`btn-modern btn-message w-full ${sending ? 'opacity-50' : ''}`}
+                    style={{ fontSize: '1.1rem' }}
                 >
                     {sending ? '⏳ Sending...' : '📤 Send Message'}
                 </button>
