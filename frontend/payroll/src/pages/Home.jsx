@@ -7,6 +7,7 @@ const Home = () => {
   return (
     <div className="home-container">
 <<<<<<< HEAD
+<<<<<<< HEAD
 
       {/* Hero Section */}
       <section className="hero">
@@ -20,6 +21,8 @@ const Home = () => {
             <button className="primary-btn">Create Account</button>
           </Link>
 =======
+=======
+>>>>>>> add94e63eb1772c872b1a0388c89dda7a59bbc61
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-wrapper">
@@ -37,12 +40,17 @@ const Home = () => {
 
           {/* Right Image */}
           <div className="hero-image">
+<<<<<<< HEAD
   <img src={heroMan} alt="Payroll Professional" />
 </div>
 >>>>>>> 49c83d320a8f36a456d2c9f3e5510e8f2d6d0391
+=======
+            <img src={heroMan} alt="Payroll Professional" />
+          </div>
+>>>>>>> add94e63eb1772c872b1a0388c89dda7a59bbc61
         </div>
       </section>
-      
+
 
       {/* About Section */}
       <section className="about">
