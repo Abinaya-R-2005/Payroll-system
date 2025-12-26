@@ -376,6 +376,12 @@ app.post("/api/payslip", async (req, res) => {
   res.json({ message: "Payslip saved successfully" });
 });
 
+app.get("/api/payslip", async (req, res) => {
+  const { employeeId, month } = req.query;
+  const payslip = await Payslip.findOne({ employeeId, month });
+  res.json(payslip || {});
+});
+
 /* =========================================================
    DELETE EMPLOYEE (ADMIN ONLY)
 ========================================================= */
