@@ -329,7 +329,9 @@ app.put("/api/messages/read/:id", async (req, res) => {
 app.put("/api/messages/:id", async (req, res) => {
   try {
     const { status, response } = req.body;
-    const updateData = { status };
+    // mark as read when admin responds or status changes
+    const updateData = { isRead: true };
+    if (status) updateData.status = status;
     if (response) updateData.response = response;
     const updated = await Message.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json(updated);
