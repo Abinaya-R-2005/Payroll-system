@@ -3,7 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import SalarySlip from '../components/SalarySlip';
+<<<<<<< HEAD
+import '../styles/EmployeeDashboard.css';
+
+=======
 import '../styles/Button.css';
+>>>>>>> fbaa18cb3b30a3a9af3636dea11fc79197c0453a
 const EmployeeDashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -142,7 +147,7 @@ const EmployeeDashboard = () => {
 
 
     return (
-        <div style={{ padding: '40px 20px' }} className="fade-in">
+        <div className="employee-card">
             <div className="container">
                 <div className="no-print" style={{
                     display: 'flex',

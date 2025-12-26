@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Input from './Input';
 import Button from './Button';
 
-const PayrollForm = ({ employee, onUpdate, stats }) => {
+const PayrollForm = ({ employee, onUpdate, stats, initialData }) => {
     const [formData, setFormData] = useState({
         basicSalary: '',
         hra: '',
@@ -17,19 +17,20 @@ const PayrollForm = ({ employee, onUpdate, stats }) => {
 
     useEffect(() => {
         if (employee) {
+            const payroll = initialData?.earnings || employee.payroll || {};
             setFormData({
-                basicSalary: employee.payroll?.basicSalary || '',
-                hra: employee.payroll?.hra || '',
-                splAllowance: employee.payroll?.splAllowance || '',
-                travelAllowance: employee.payroll?.travelAllowance || '',
-                allowances: employee.payroll?.allowances || '',
-                bonus: employee.payroll?.bonus || '',
-                insteadDue: employee.payroll?.insteadDue || '',
-                pf: employee.payroll?.pf || '',
-                tax: employee.payroll?.tax || ''
+                basicSalary: payroll.basicSalary || '',
+                hra: payroll.hra || '',
+                splAllowance: payroll.specialAllowance || '',
+                travelAllowance: payroll.travelAllowance || '',
+                allowances: payroll.allowances || '',
+                bonus: payroll.bonus || '',
+                insteadDue: payroll.insteadDue || '',
+                pf: initialData?.deductions?.pf || '',
+                tax: initialData?.deductions?.taxPercent || ''
             });
         }
-    }, [employee]);
+    }, [employee, initialData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

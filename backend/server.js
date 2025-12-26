@@ -378,6 +378,47 @@ app.post("/api/payslip", async (req, res) => {
   res.json({ message: "Payslip saved successfully" });
 });
 
+app.get("/api/payslip", async (req, res) => {
+  const { employeeId, month } = req.query;
+  const payslip = await Payslip.findOne({ employeeId, month });
+  res.json(payslip || {});
+});
+
+/* =========================================================
+   DELETE EMPLOYEE (ADMIN ONLY)
+========================================================= */
+app.delete("/api/employees/:employeeId", async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+    // Delete employee
+    const employee = await Employee.findOneAndDelete({ employeeId });
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Delete related attendance
+    await Attendance.deleteMany({ employeeId });
+
+    // Delete related payslips
+    await Payslip.deleteMany({ employeeId });
+
+    // Delete related messages
+    await Message.deleteMany({
+      $or: [
+        { fromId: employeeId },
+        { toId: employeeId }
+      ]
+    });
+
+    res.json({ message: "Employee deleted successfully" });
+  } catch (err) {
+    console.error("Delete employee error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 /* =========================================================
    SERVER
 ========================================================= */
