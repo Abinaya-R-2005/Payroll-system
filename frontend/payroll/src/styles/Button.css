@@ -31,7 +31,40 @@
     box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4);
 }
 
-/* Outline/Secondary Button */
+/* Payslip Button - Green Gradient */
+.btn-payslip {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    padding: 12px 28px !important;
+}
+
+.btn-payslip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+}
+
+/* Message Button - Violet/Indigo Gradient */
+.btn-message {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    color: white;
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    padding: 12px 28px !important;
+}
+
+.btn-message:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
+    background: linear-gradient(135deg, #a78bfa 0%, #6366f1 100%);
+}
+
 /* Outline/Secondary Button */
 .btn-secondary {
     background: transparent;
@@ -56,4 +89,23 @@
 /* Full Width Utility */
 .w-full {
     width: 100%;
+}
+
+/* Logout button specific styling */
+/* Logout button specific styling */
+.logout-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    border: none !important;
+    color: white !important;
+    padding: 12px 28px !important;
+    border-radius: 999px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);
+    transition: all 0.3s ease !important;
+}
+
+.logout-btn:hover {
+    background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgba(220, 38, 38, 0.4) !important;
 }

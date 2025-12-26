@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import Button from '../components/Button';
 import EmployeeList from '../components/EmployeeList';
 import PayrollForm from '../components/PayrollForm';
 import AttendancePanel from '../components/AttendancePanel';
@@ -19,6 +21,23 @@ const AdminDashboard = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const viewMode = searchParams.get('v') || 'config'; // 'config' or 'slip'
     const [pendingPayrollData, setPendingPayrollData] = useState(null);
+    const [payslipData, setPayslipData] = useState(null);
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+
+    // If user uses browser navigation (back/forward), force logout for safety
+    useEffect(() => {
+        const handlePop = () => {
+            try {
+                logout();
+            } finally {
+                navigate('/login');
+            }
+        };
+
+        window.addEventListener('popstate', handlePop);
+        return () => window.removeEventListener('popstate', handlePop);
+    }, [logout, navigate]);
 
     useEffect(() => {
         const fetchEmployees = async () => {
@@ -39,80 +58,81 @@ const AdminDashboard = () => {
     }, []);
 
     const handleEmployeeSelect = async (employee) => {
-    try {
-        const res = await fetch(
-            `http://localhost:5000/api/employees/${employee.employeeId}`
-        );
+        try {
+            const res = await fetch(
+                `http://localhost:5000/api/employees/${employee.employeeId}`
+            );
 
-        if (!res.ok) {
-            throw new Error("Failed to fetch employee");
+            if (!res.ok) {
+                throw new Error("Failed to fetch employee");
+            }
+
+            const fullEmployee = await res.json();
+            setSelectedEmployee(fullEmployee);
+        } catch (err) {
+            console.error("Failed to fetch employee details", err);
         }
+    };
 
-        const fullEmployee = await res.json();
-        setSelectedEmployee(fullEmployee);
-    } catch (err) {
-        console.error("Failed to fetch employee details", err);
-    }
-};
-
-const handlePayrollUpdate = async (employeeId, payrollData) => {
-  const [year, month] = viewingMonth.split('-').map(Number);
-  const daysInMonth = new Date(year, month, 0).getDate();
-
-  const currentEmpAttendance = attendanceMap[employeeId] || {};
-  const presentDays = daysInMonth;
-
-  const gross =
-  (+payrollData.basicSalary || 0) +
-  (+payrollData.hra || 0) +
-  (+payrollData.specialAllowance || 0) +
-  (+payrollData.travelAllowance || 0) +
-  (+payrollData.allowances || 0) +
-  (+payrollData.bonus || 0) +
-  (+payrollData.insteadDue || 0);
+    const handlePayrollUpdate = async (employeeId, payrollData) => {
+        const [year, month] = viewingMonth.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
 
 
-  const proRatedGross = (gross / daysInMonth) * presentDays;
-  const taxAmount = proRatedGross * ((+payrollData.tax || 0) / 100);
-  const netSalary = proRatedGross - taxAmount;
+        const presentDays = daysInMonth;
 
-  const payslipPayload = {
-    employeeId,
-    month: viewingMonth,
+        const gross =
+            (+payrollData.basicSalary || 0) +
+            (+payrollData.hra || 0) +
+            (+payrollData.specialAllowance || 0) +
+            (+payrollData.travelAllowance || 0) +
+            (+payrollData.allowances || 0) +
+            (+payrollData.bonus || 0) +
+            (+payrollData.insteadDue || 0);
 
-    earnings: {
-  basicSalary: payrollData.basicSalary,
-  hra: payrollData.hra,
-  specialAllowance: payrollData.specialAllowance,
-  travelAllowance: payrollData.travelAllowance,
-  allowances: payrollData.allowances,
-  bonus: payrollData.bonus,
-  insteadDue: payrollData.insteadDue
-},
 
-    deductions: {
-      taxPercent: payrollData.tax,
-      taxAmount
-    },
+        const proRatedGross = (gross / daysInMonth) * presentDays;
+        const taxAmount = proRatedGross * ((+payrollData.tax || 0) / 100);
+        const netSalary = proRatedGross - taxAmount;
 
-    attendance: {
-      totalDays: daysInMonth,
-      presentDays
-    },
+        const payslipPayload = {
+            employeeId,
+            month: viewingMonth,
 
-    grossSalary: proRatedGross,
-    netSalary
-  };
+            earnings: {
+                basicSalary: payrollData.basicSalary,
+                hra: payrollData.hra,
+                specialAllowance: payrollData.specialAllowance,
+                travelAllowance: payrollData.travelAllowance,
+                allowances: payrollData.allowances,
+                bonus: payrollData.bonus,
+                insteadDue: payrollData.insteadDue
+            },
 
-  await fetch("http://localhost:5000/api/payslip", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payslipPayload)
-  });
+            deductions: {
+                taxPercent: payrollData.tax,
+                taxAmount
+            },
 
-  setPendingPayrollData(payrollData);
-  setSearchParams({ v: "slip" });
-};
+            attendance: {
+                totalDays: daysInMonth,
+                presentDays
+            },
+
+            grossSalary: proRatedGross,
+            netSalary
+        };
+
+        await fetch("http://localhost:5000/api/payslip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payslipPayload)
+        });
+
+        setPayslipData(payslipPayload);
+        setPendingPayrollData(payrollData);
+        setSearchParams({ v: "slip" });
+    };
 
 
     const handleMarkAttendance = async (employeeId, date, status) => {
@@ -164,8 +184,54 @@ const handlePayrollUpdate = async (employeeId, payrollData) => {
             }
         };
 
+        const fetchPayslip = async () => {
+            try {
+                const res = await fetch(`http://localhost:5000/api/payslip?employeeId=${encodeURIComponent(selectedEmployee.employeeId)}&month=${viewingMonth}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                setPayslipData(data);
+            } catch (err) {
+                console.warn('Could not fetch payslip for', selectedEmployee.employeeId, err);
+                setPayslipData(null);
+            }
+        };
+
         fetchAttendance();
+        fetchPayslip();
     }, [selectedEmployee, viewingMonth]);
+
+    const handleDeleteEmployee = async (employee) => {
+  const confirmDelete = window.confirm(
+    `Are you sure you want to delete ${employee.fullName}? This action cannot be undone.`
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/employees/${employee.employeeId}`,
+      {
+        method: "DELETE"
+      }
+    );
+
+    if (!res.ok) throw new Error("Delete failed");
+
+    // Remove employee from UI list
+    setEmployees(prev =>
+      prev.filter(emp => emp.employeeId !== employee.employeeId)
+    );
+
+    // Clear selected employee
+    setSelectedEmployee(null);
+
+    alert("Employee deleted successfully");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete employee");
+  }
+};
+
 
     if (loading) {
         return (
@@ -193,6 +259,10 @@ const handlePayrollUpdate = async (employeeId, payrollData) => {
                     <div>
                         <h1 className="title-gradient" style={{ fontSize: '2.5rem', marginBottom: '5px' }}>Admin Dashboard</h1>
                         <p style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Strategic Payroll & Workforce Intelligence</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <Button onClick={() => navigate('/messages')} variant="primary" style={{ padding: '12px 24px' }}>Messages</Button>
+                        <Button className="logout-btn" variant="secondary" onClick={() => { logout(); navigate('/login'); }} style={{ padding: '10px 18px' }}>Logout</Button>
                     </div>
                 </div>
 
@@ -228,9 +298,19 @@ const handlePayrollUpdate = async (employeeId, payrollData) => {
                             selectedEmployeeId={selectedEmployee?.employeeId}
                         />
                     </div>
+                    
 
                     {/* Right Panel: Details & Actions */}
                     <div className="details-panel">
+                        <div className="no-print" style={{ marginBottom: "15px", textAlign: "right" }}>
+  <Button
+    variant="danger"
+    onClick={() => handleDeleteEmployee(selectedEmployee)}
+  >
+    Delete Employee
+  </Button>
+</div>
+
                         {selectedEmployee ? (
                             <>
                                 {viewMode === 'slip' ? (
@@ -276,6 +356,7 @@ const handlePayrollUpdate = async (employeeId, payrollData) => {
                                                     employee={selectedEmployee}
                                                     onUpdate={handlePayrollUpdate}
                                                     stats={stats}
+                                                    initialData={payslipData}
                                                 />
                                             );
                                         })()}

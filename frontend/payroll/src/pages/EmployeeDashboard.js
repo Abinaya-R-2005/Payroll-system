@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import SalarySlip from '../components/SalarySlip';
+<<<<<<< HEAD
 import '../styles/EmployeeDashboard.css';
 
+=======
+import '../styles/Button.css';
+>>>>>>> fbaa18cb3b30a3a9af3636dea11fc79197c0453a
 const EmployeeDashboard = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     // State
     const [employeeData, setEmployeeData] = useState(null);
@@ -114,9 +119,32 @@ const EmployeeDashboard = () => {
     const handlePrev = () => setViewDate(new Date(year, month - 1, 1));
     const handleNext = () => setViewDate(new Date(year, month + 1, 1));
 
+    // Track if we're returning from Messages to prevent premature logout
+    useEffect(() => {
+        // Scroll to top when component mounts/changes
+        window.scrollTo(0, 0);
+    }, [viewMode]);
+
+    // If user uses browser navigation (back/forward), force logout for safety
+    useEffect(() => {
+        // Only apply popstate logout if user is NOT on the Messages page
+        if (viewMode === 'overview') {
+            const handlePop = () => {
+                try {
+                    logout();
+                } finally {
+                    navigate('/login');
+                }
+            };
+
+            window.addEventListener('popstate', handlePop);
+            return () => window.removeEventListener('popstate', handlePop);
+        }
+    }, [logout, navigate, viewMode]);
+
     if (loading && !employeeData) return <div style={{ padding: '40px' }}>Loading your dashboard...</div>;
 
-    const monthLabel = viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+
 
     return (
         <div className="employee-card">
@@ -136,10 +164,58 @@ const EmployeeDashboard = () => {
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                         <div className="fly-card" style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '10px 20px', borderRadius: '50px' }}>
                             <button onClick={handlePrev} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--primary)' }}>◀</button>
-                            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', minWidth: '140px', textAlign: 'center' }}>{monthLabel}</span>
+
+                            <select
+                                value={month}
+                                onChange={(e) => setViewDate(new Date(year, parseInt(e.target.value), 1))}
+                                style={{
+                                    border: 'none',
+                                    background: 'transparent',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    color: 'var(--text-main)',
+                                    cursor: 'pointer',
+                                    outline: 'none',
+                                    appearance: 'none',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => (
+                                    <option key={m} value={i}>{m}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={year}
+                                onChange={(e) => setViewDate(new Date(parseInt(e.target.value), month, 1))}
+                                style={{
+                                    border: 'none',
+                                    background: 'transparent',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    color: 'var(--text-main)',
+                                    cursor: 'pointer',
+                                    outline: 'none',
+                                    paddingLeft: '5px'
+                                }}
+                            >
+                                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+
                             <button onClick={handleNext} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--primary)' }}>▶</button>
                         </div>
-                        <Button onClick={() => setSearchParams({ v: 'slip' })} variant="primary" style={{ padding: '12px 28px' }}>View Pay Slip</Button>
+                        <Button onClick={() => setSearchParams({ v: 'slip' })} className="btn-payslip">
+                            📄 View Pay Slip
+                        </Button>
+                        <Button
+                            onClick={() => navigate('/messages')}
+                            className="btn-message"
+                        >
+                            💬 Messages
+                        </Button>
+                        <Button className="logout-btn" onClick={() => { logout(); navigate('/login'); }} variant="secondary" style={{ padding: '12px 20px' }}>Logout</Button>
                     </div>
                 </div>
 
