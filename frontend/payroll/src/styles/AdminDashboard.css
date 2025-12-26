@@ -32,9 +32,17 @@
 }
 
 @keyframes bgShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* ================= GRID ================= */
@@ -61,12 +69,10 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    120deg,
-    transparent,
-    rgba(56, 189, 248, 0.18),
-    transparent
-  );
+  background: linear-gradient(120deg,
+      transparent,
+      rgba(56, 189, 248, 0.18),
+      transparent);
   transform: translateX(-120%);
   transition: transform 0.8s ease;
 }
@@ -89,6 +95,7 @@
 .details-panel::-webkit-scrollbar {
   width: 6px;
 }
+
 .details-panel::-webkit-scrollbar-thumb {
   background: #7dd3fc;
   border-radius: 10px;
@@ -99,6 +106,7 @@
   font-weight: 800;
   font-size: 2.6rem;
   background: linear-gradient(135deg, var(--sky-dark), var(--sky-main));
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: fadeSlide 0.8s ease;
@@ -115,14 +123,14 @@ button,
   cursor: pointer;
   background: linear-gradient(135deg, var(--sky-main), var(--sky-dark));
   color: white;
-  box-shadow: inset 3px 3px 6px rgba(255,255,255,0.3),
-              inset -3px -3px 6px rgba(0,0,0,0.15);
+  box-shadow: inset 3px 3px 6px rgba(255, 255, 255, 0.3),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.15);
   transition: var(--transition);
 }
 
 button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(56,189,248,0.35);
+  box-shadow: 0 10px 25px rgba(56, 189, 248, 0.35);
 }
 
 button:active {
@@ -131,12 +139,22 @@ button:active {
 
 /* ================= EMPTY STATE ================= */
 .glass-panel {
-  background: rgba(255,255,255,0.6);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border);
   padding: 40px;
   box-shadow: var(--shadow-soft);
+}
+
+.leave-management-panel {
+  background: linear-gradient(135deg, rgba(255, 252, 240, 0.8), rgba(255, 244, 219, 0.7));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.leave-management-panel h2 {
+  color: #92400e !important;
+  font-weight: 800;
 }
 
 /* ================= ANIMATIONS ================= */
@@ -149,6 +167,7 @@ button:active {
     opacity: 0;
     transform: translateY(18px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -156,6 +175,40 @@ button:active {
 }
 
 /* ================= RESPONSIVE ================= */
+
+/* ================= SEARCH BAR ANIMATION ================= */
+.search-container {
+  padding: 15px 15px 0 15px;
+}
+
+.search-bar-animated {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 50px;
+  border: 1px solid var(--glass-border);
+  background: white;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.search-bar-animated:focus {
+  border-color: var(--sky-main);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2), 0 8px 20px rgba(56, 189, 248, 0.15);
+  transform: scale(1.02);
+  background: #f0f9ff;
+}
+
+.search-bar-animated::placeholder {
+  transition: opacity 0.3s ease;
+  color: var(--text-muted);
+}
+
+.search-bar-animated:focus::placeholder {
+  opacity: 0.7;
+}
+
 @media (max-width: 900px) {
   .admin-dashboard-container {
     grid-template-columns: 1fr;

@@ -3,12 +3,12 @@ import '../index.css';
 
 const Button = ({ children, onClick, type = 'button', variant = 'primary', className = '', ...props }) => {
     const baseStyle = {
-        padding: '0.75rem 1.5rem',
+        padding: '0.45rem 0.9rem',
         borderRadius: 'var(--radius)',
         border: '1px solid transparent',
         cursor: 'pointer',
         fontWeight: '600',
-        fontSize: '0.95rem',
+        fontSize: '0.85rem',
         transition: 'all 0.2s ease',
         display: 'inline-flex',
         alignItems: 'center',

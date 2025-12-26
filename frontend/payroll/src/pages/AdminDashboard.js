@@ -6,6 +6,7 @@ import EmployeeList from '../components/EmployeeList';
 import PayrollForm from '../components/PayrollForm';
 import AttendancePanel from '../components/AttendancePanel';
 import SalarySlip from '../components/SalarySlip';
+import LeaveBalancePanel from '../components/LeaveBalancePanel';
 import '../styles/AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -22,8 +23,86 @@ const AdminDashboard = () => {
     const viewMode = searchParams.get('v') || 'config'; // 'config' or 'slip'
     const [pendingPayrollData, setPendingPayrollData] = useState(null);
     const [payslipData, setPayslipData] = useState(null);
+    const [leaveRequests, setLeaveRequests] = useState([]);
+    const [pendingLeaveCount, setPendingLeaveCount] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
     const { logout } = useAuth();
     const navigate = useNavigate();
+
+    // Poll for pending leaves count
+    useEffect(() => {
+        const fetchPendingCount = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/leaves/pending-count');
+                if (res.ok) {
+                    const data = await res.json();
+                    setPendingLeaveCount(data.count);
+                }
+            } catch (err) {
+                console.warn('Failed to fetch pending leave count');
+            }
+        };
+
+        fetchPendingCount();
+        const interval = setInterval(fetchPendingCount, 15000); // 15s poll
+        return () => clearInterval(interval);
+    }, []);
+
+    // Fetch Leave Requests (Real Backend)
+    useEffect(() => {
+        if (viewMode === 'leaves') {
+            const fetchLeaves = async () => {
+                try {
+                    const res = await fetch('http://localhost:5000/api/leaves');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setLeaveRequests(data);
+                        // Update count as well
+                        const pending = data.filter(l => l.status === 'Pending').length;
+                        setPendingLeaveCount(pending);
+                    } else {
+                        console.error('Failed to fetch leaves');
+                    }
+                } catch (err) {
+                    console.error('Error fetching leaves:', err);
+                }
+            };
+            fetchLeaves();
+        }
+    }, [viewMode]);
+
+    const handleLeaveAction = async (id, status) => {
+        // Optimistic update
+        setLeaveRequests(prev => prev.map(req => req._id === id ? { ...req, status } : req));
+
+        // Decrease count if resolving a pending request
+        const request = leaveRequests.find(r => r._id === id);
+        if (request && request.status === 'Pending' && status !== 'Pending') {
+            setPendingLeaveCount(prev => Math.max(0, prev - 1));
+        }
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/leaves/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (!res.ok) {
+                // Revert optimistic update if failed
+                console.error('Update failed');
+                // You might want to re-fetch here
+            }
+        } catch (err) {
+            console.warn('Backend update failed for leave request', err);
+        }
+    };
+
+
+    const filteredEmployees = employees.filter(emp =>
+        (emp.fullName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (emp.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (emp.employeeId?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
 
     // If user uses browser navigation (back/forward), force logout for safety
     useEffect(() => {
@@ -200,37 +279,60 @@ const AdminDashboard = () => {
         fetchPayslip();
     }, [selectedEmployee, viewingMonth]);
 
+    const handleUpdateLeaveBalances = async (employeeId, balances) => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/employees/${employeeId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leaveBalances: balances })
+            });
+
+            if (!res.ok) throw new Error("Failed to update leave balances");
+
+            const updatedEmployee = await res.json();
+
+            // Update local state
+            setSelectedEmployee(updatedEmployee);
+            setEmployees(prev => prev.map(emp => emp.employeeId === employeeId ? updatedEmployee : emp));
+
+            alert("Leave balances updated successfully");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to update leave balances");
+        }
+    };
+
     const handleDeleteEmployee = async (employee) => {
-  const confirmDelete = window.confirm(
-    `Are you sure you want to delete ${employee.fullName}? This action cannot be undone.`
-  );
+        const confirmDelete = window.confirm(
+            `Are you sure you want to delete ${employee.fullName}? This action cannot be undone.`
+        );
 
-  if (!confirmDelete) return;
+        if (!confirmDelete) return;
 
-  try {
-    const res = await fetch(
-      `http://localhost:5000/api/employees/${employee.employeeId}`,
-      {
-        method: "DELETE"
-      }
-    );
+        try {
+            const res = await fetch(
+                `http://localhost:5000/api/employees/${employee.employeeId}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
-    if (!res.ok) throw new Error("Delete failed");
+            if (!res.ok) throw new Error("Delete failed");
 
-    // Remove employee from UI list
-    setEmployees(prev =>
-      prev.filter(emp => emp.employeeId !== employee.employeeId)
-    );
+            // Remove employee from UI list
+            setEmployees(prev =>
+                prev.filter(emp => emp.employeeId !== employee.employeeId)
+            );
 
-    // Clear selected employee
-    setSelectedEmployee(null);
+            // Clear selected employee
+            setSelectedEmployee(null);
 
-    alert("Employee deleted successfully");
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete employee");
-  }
-};
+            alert("Employee deleted successfully");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete employee");
+        }
+    };
 
 
     if (loading) {
@@ -261,8 +363,55 @@ const AdminDashboard = () => {
                         <p style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Strategic Payroll & Workforce Intelligence</p>
                     </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <Button
+                            onClick={() => setSearchParams({ v: 'leaves' })}
+                            style={{
+                                background: viewMode === 'leaves'
+                                    ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                                    : 'transparent',
+                                color: viewMode === 'leaves' ? 'white' : '#f59e0b',
+                                border: '1px solid #f59e0b',
+                                position: 'relative',
+                                fontWeight: '700'
+                            }}
+                        >
+                            📅 Manage Leaves
+                            {pendingLeaveCount > 0 && (
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '-8px',
+                                    right: '-8px',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    borderRadius: '50%',
+                                    width: '20px',
+                                    height: '20px',
+                                    fontSize: '0.75rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 'bold',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                }}>
+                                    {pendingLeaveCount}
+                                </span>
+                            )}
+                        </Button>
                         <Button onClick={() => navigate('/messages')} variant="primary" style={{ padding: '12px 24px' }}>Messages</Button>
-                        <Button className="logout-btn" variant="secondary" onClick={() => { logout(); navigate('/login'); }} style={{ padding: '10px 18px' }}>Logout</Button>
+                        <Button
+                            className="logout-btn"
+                            variant="secondary"
+                            onClick={() => { logout(); navigate('/login'); }}
+                            style={{
+                                padding: '0.6rem 1.8rem',
+                                fontSize: '0.95rem',
+                                fontWeight: '700',
+                                borderRadius: '50px',
+                                background: '#fff'
+                            }}
+                        >
+                            Logout
+                        </Button>
                     </div>
                 </div>
 
@@ -292,96 +441,187 @@ const AdminDashboard = () => {
                 <div className="admin-dashboard-container">
                     {/* Left Panel: Employee List */}
                     <div className="fly-card no-print" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        <div className="search-container">
+                            <input
+                                type="text"
+                                placeholder="🔍 Search employees..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="search-bar-animated"
+                            />
+                        </div>
                         <EmployeeList
-                            employees={employees}
+                            employees={filteredEmployees}
                             onSelect={handleEmployeeSelect}
                             selectedEmployeeId={selectedEmployee?.employeeId}
                         />
                     </div>
-                    
+
 
                     {/* Right Panel: Details & Actions */}
                     <div className="details-panel">
-                        <div className="no-print" style={{ marginBottom: "15px", textAlign: "right" }}>
-  <Button
-    variant="danger"
-    onClick={() => handleDeleteEmployee(selectedEmployee)}
-  >
-    Delete Employee
-  </Button>
-</div>
-
-                        {selectedEmployee ? (
+                        {viewMode === 'leaves' ? (
+                            <div className="glass-panel leave-management-panel fade-in">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <h2 style={{ margin: 0, color: 'var(--text-main)' }}>Manage Leave Requests</h2>
+                                    <Button onClick={() => setSearchParams({})} variant="secondary" style={{ fontSize: '0.8rem', padding: '6px 12px' }}>Close</Button>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                    {leaveRequests.length === 0 ? (
+                                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>No pending leave requests.</p>
+                                    ) : (
+                                        leaveRequests.map(req => (
+                                            <div key={req._id} style={{
+                                                background: 'white',
+                                                padding: '20px',
+                                                borderRadius: '16px',
+                                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                                                border: '1px solid var(--border-color)',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}>
+                                                <div>
+                                                    <h4 style={{ margin: '0 0 5px 0', fontSize: '1.1rem' }}>{req.employeeName}</h4>
+                                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                        <span style={{ fontWeight: '600', color: 'var(--primary)', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px' }}>{req.type}</span>
+                                                        <span>{req.startDate} ➝ {req.endDate}</span>
+                                                        {(() => {
+                                                            const emp = employees.find(e => e.employeeId === req.employeeId);
+                                                            if (emp && emp.leaveBalances) {
+                                                                const balanceKey = req.type.toLowerCase();
+                                                                return (
+                                                                    <span style={{ marginLeft: '10px', color: '#64748b', fontStyle: 'italic', fontWeight: '500' }}>
+                                                                        (Balance: {emp.leaveBalances[balanceKey] ?? 0} days remaining)
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        })()}
+                                                    </div>
+                                                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#475569' }}>"{req.reason}"</p>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                    {req.status === 'Pending' ? (
+                                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <button
+                                                                onClick={() => handleLeaveAction(req._id, 'Approved')}
+                                                                style={{ background: '#dcfce7', color: '#166534', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            >
+                                                                ✓ Approve
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleLeaveAction(req._id, 'Rejected')}
+                                                                style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            >
+                                                                ✕ Reject
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{
+                                                            fontWeight: '700',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '8px',
+                                                            background: req.status === 'Approved' ? '#dcfce7' : '#fee2e2',
+                                                            color: req.status === 'Approved' ? '#166534' : '#991b1b'
+                                                        }}>
+                                                            {req.status.toUpperCase()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
                             <>
-                                {viewMode === 'slip' ? (
-                                    <SalarySlip
-                                        employee={selectedEmployee}
-                                        payrollData={pendingPayrollData}
-                                        stats={(() => {
-                                            const [year, month] = viewingMonth.split('-').map(Number);
-                                            const daysInMonth = new Date(year, month, 0).getDate();
-                                            const currentEmpAttendance = attendanceMap[selectedEmployee.employeeId] || {};
-                                            const s = { totalDays: daysInMonth, present: 0, absent: 0, leave: 0 };
-                                            Object.values(currentEmpAttendance).forEach(status => {
-                                                if (status === 'P') s.present++;
-                                                else if (status === 'A') s.absent++;
-                                                else if (status === 'L') s.leave++;
-                                            });
-                                            return s;
-                                        })()}
-                                        onBack={() => setSearchParams({ v: 'config' })}
-                                    />
-                                ) : (
+                                <div className="no-print" style={{ marginBottom: "15px", textAlign: "right" }}>
+                                    <Button
+                                        variant="danger"
+                                        onClick={() => handleDeleteEmployee(selectedEmployee)}
+                                    >
+                                        Delete Employee
+                                    </Button>
+                                </div>
+
+                                {selectedEmployee ? (
                                     <>
-                                        {(() => {
-                                            const [year, month] = viewingMonth.split('-').map(Number);
-                                            const daysInMonth = new Date(year, month, 0).getDate();
-                                            const currentEmpAttendance = attendanceMap[selectedEmployee.employeeId] || {};
+                                        {viewMode === 'slip' ? (
+                                            <SalarySlip
+                                                employee={selectedEmployee}
+                                                payrollData={pendingPayrollData}
+                                                stats={(() => {
+                                                    const [year, month] = viewingMonth.split('-').map(Number);
+                                                    const daysInMonth = new Date(year, month, 0).getDate();
+                                                    const currentEmpAttendance = attendanceMap[selectedEmployee.employeeId] || {};
+                                                    const s = { totalDays: daysInMonth, present: 0, absent: 0, leave: 0 };
+                                                    Object.values(currentEmpAttendance).forEach(status => {
+                                                        if (status === 'P') s.present++;
+                                                        else if (status === 'A') s.absent++;
+                                                        else if (status === 'L') s.leave++;
+                                                    });
+                                                    return s;
+                                                })()}
+                                                onBack={() => setSearchParams({ v: 'config' })}
+                                            />
+                                        ) : (
+                                            <>
+                                                {(() => {
+                                                    const [year, month] = viewingMonth.split('-').map(Number);
+                                                    const daysInMonth = new Date(year, month, 0).getDate();
+                                                    const currentEmpAttendance = attendanceMap[selectedEmployee.employeeId] || {};
 
-                                            const stats = {
-                                                totalDays: daysInMonth,
-                                                present: 0,
-                                                absent: 0,
-                                                leave: 0
-                                            };
+                                                    const stats = {
+                                                        totalDays: daysInMonth,
+                                                        present: 0,
+                                                        absent: 0,
+                                                        leave: 0
+                                                    };
 
-                                            Object.values(currentEmpAttendance).forEach(status => {
-                                                if (status === 'P') stats.present++;
-                                                else if (status === 'A') stats.absent++;
-                                                else if (status === 'L') stats.leave++;
-                                            });
+                                                    Object.values(currentEmpAttendance).forEach(status => {
+                                                        if (status === 'P') stats.present++;
+                                                        else if (status === 'A') stats.absent++;
+                                                        else if (status === 'L') stats.leave++;
+                                                    });
 
-                                            return (
-                                                <PayrollForm
+                                                    return (
+                                                        <PayrollForm
+                                                            employee={selectedEmployee}
+                                                            onUpdate={handlePayrollUpdate}
+                                                            stats={stats}
+                                                            initialData={payslipData}
+                                                        />
+                                                    );
+                                                })()}
+                                                <LeaveBalancePanel
                                                     employee={selectedEmployee}
-                                                    onUpdate={handlePayrollUpdate}
-                                                    stats={stats}
-                                                    initialData={payslipData}
+                                                    onUpdateBalances={handleUpdateLeaveBalances}
                                                 />
-                                            );
-                                        })()}
-                                        <AttendancePanel
-                                            employee={selectedEmployee}
-                                            onMarkAttendance={handleMarkAttendance}
-                                            onMonthChange={(monthStr) => setViewingMonth(monthStr)}
-                                            initialStatuses={attendanceMap[selectedEmployee.employeeId] || {}}
-                                        />
+                                                <AttendancePanel
+                                                    employee={selectedEmployee}
+                                                    onMarkAttendance={handleMarkAttendance}
+                                                    onMonthChange={(monthStr) => setViewingMonth(monthStr)}
+                                                    initialStatuses={attendanceMap[selectedEmployee.employeeId] || {}}
+                                                />
+                                            </>
+                                        )}
                                     </>
+                                ) : (
+                                    <div className="glass-panel" style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        height: '100%',
+                                        color: 'var(--text-muted)',
+                                        flexDirection: 'column'
+                                    }}>
+                                        <span style={{ fontSize: '3rem', marginBottom: '15px' }}>👈</span>
+                                        <h3>Select an employee to manage</h3>
+                                        <p>Click on an employee from the list to view details.</p>
+                                    </div>
                                 )}
                             </>
-                        ) : (
-                            <div className="glass-panel" style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%',
-                                color: 'var(--text-muted)',
-                                flexDirection: 'column'
-                            }}>
-                                <span style={{ fontSize: '3rem', marginBottom: '15px' }}>👈</span>
-                                <h3>Select an employee to manage</h3>
-                                <p>Click on an employee from the list to view details.</p>
-                            </div>
                         )}
                     </div>
                 </div>

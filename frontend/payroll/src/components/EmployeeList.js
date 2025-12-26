@@ -45,8 +45,43 @@ const EmployeeList = ({ employees, onSelect, selectedEmployeeId }) => {
                                     if (selectedEmployeeId !== emp.employeeId) e.currentTarget.style.background = 'transparent';
                                 }}
                             >
-                                <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{emp.fullName || emp.email}</div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>ID: {emp.employeeId}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    {/* Avatar */}
+                                    <div style={{
+                                        width: '42px',
+                                        height: '42px',
+                                        borderRadius: '50%',
+                                        background: emp.profilePhoto ? 'transparent' : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontWeight: '700',
+                                        fontSize: '1rem',
+                                        boxShadow: '0 2px 5px rgba(37,99,235,0.2)',
+                                        flexShrink: 0,
+                                        overflow: 'hidden',
+                                        border: emp.profilePhoto ? '2px solid #e2e8f0' : 'none'
+                                    }}>
+                                        {emp.profilePhoto ? (
+                                            <img
+                                                src={emp.profilePhoto}
+                                                alt={emp.fullName}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                        ) : (
+                                            (() => {
+                                                const name = emp.fullName || emp.email || '?';
+                                                return name.charAt(0).toUpperCase();
+                                            })()
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{emp.fullName || emp.email}</div>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>ID: {emp.employeeId}</div>
+                                    </div>
+                                </div>
                             </li>
                         ))}
                     </ul>

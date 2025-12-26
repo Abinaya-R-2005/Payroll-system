@@ -180,8 +180,8 @@ const EmployeeProfile = () => {
         <div className="profile-header-card">
           <div className="profile-photo-section">
             {photoPreview ? (
-              <img 
-                src={photoPreview} 
+              <img
+                src={photoPreview}
                 alt={employee.fullName}
                 className="profile-photo"
               />
@@ -192,7 +192,7 @@ const EmployeeProfile = () => {
             )}
             {isEditing && (
               <div className="photo-upload-overlay">
-                <button 
+                <button
                   className="upload-btn"
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -453,7 +453,7 @@ const EmployeeProfile = () => {
                 </div>
                 <div className="info-card">
                   <label>&nbsp;</label>
-                  <Button 
+                  <Button
                     onClick={handleValidateAccount}
                     disabled={accountValidating}
                     style={{ width: "100%", padding: "8px" }}
@@ -561,12 +561,20 @@ const EmployeeProfile = () => {
               <Button onClick={() => navigate("/dashboard")} className="btn-back">
                 ← Back to Dashboard
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   logout();
                   navigate("/login");
                 }}
                 className="btn-logout"
+                variant="secondary"
+                style={{
+                  padding: '0.6rem 1.8rem',
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  borderRadius: '50px',
+                  background: '#fff'
+                }}
               >
                 Logout
               </Button>

@@ -61,7 +61,12 @@ const employeeSchema = new mongoose.Schema(
 
     email: { type: String, unique: true },
     password: String,
-    profilePhoto: { type: String, default: null }
+    profilePhoto: { type: String, default: null },
+    leaveBalances: {
+      casual: { type: Number, default: 12 },
+      sick: { type: Number, default: 10 },
+      earned: { type: Number, default: 15 }
+    }
   },
   { timestamps: true }
 );
@@ -210,13 +215,13 @@ app.post("/register", async (req, res) => {
     let idExists = true;
     let counter = 1;
     const maxAttempts = 10000; // Safety limit
-    
+
     while (idExists && counter <= maxAttempts) {
       employeeId = `Fly_emp${counter}`;
-      
+
       // Check if this ID already exists in database
       const idCheck = await Employee.findOne({ employeeId: employeeId });
-      
+
       if (!idCheck) {
         // ID is unique, use it
         idExists = false;
@@ -242,7 +247,7 @@ app.post("/register", async (req, res) => {
 
     const saved = await employee.save();
     console.log(`✅ Employee registered successfully with email: ${saved.email} and ID: ${saved.employeeId}`);
-    
+
     const { password, __v, ...employeeSafe } = saved.toObject();
     res.status(201).json({ message: "Registration successful", employee: employeeSafe });
   } catch (err) {
@@ -262,18 +267,18 @@ app.post("/login", async (req, res) => {
     console.log(`\n🔐 LOGIN ATTEMPT`);
     console.log(`📧 Email received: "${email}" (length: ${email.length})`);
     console.log(`👤 Role: ${role}`);
-    
+
     // First, let's check what emails exist in DB
     const allEmployees = await Employee.find({}, { email: 1 });
     console.log(`\n📊 All registered employee emails in DB:`);
     allEmployees.forEach((emp, idx) => {
       console.log(`   ${idx + 1}. "${emp.email}" (length: ${emp.email.length})`);
     });
-    
+
     // Try exact match first
     console.log(`\n🔍 Trying exact match...`);
     let user = await Employee.findOne({ email: email });
-    
+
     // If not found, try case-insensitive
     if (!user) {
       console.log(`⚠️ Exact match failed, trying case-insensitive...`);
@@ -286,7 +291,7 @@ app.post("/login", async (req, res) => {
     }
 
     console.log(`✅ User found: ${user.email}`);
-    
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       console.log(`❌ Invalid password for email: ${email}`);
@@ -349,7 +354,7 @@ app.put("/api/employees/:employeeId", async (req, res) => {
       "panNumber", "aadharNumber",
       "accountName", "accountNumber", "accountType", "bankCode", "jobTitle", "department",
       "joiningDate", "workLocation", "emergencyName", "emergencyRel", "emergencyPhone",
-      "profilePhoto"
+      "profilePhoto", "leaveBalances"
     ];
 
     allowedFields.forEach(field => {
@@ -401,6 +406,108 @@ app.get("/api/attendance", async (req, res) => {
 });
 
 /* =========================================================
+   LEAVE MANAGEMENT (NEW)
+========================================================= */
+const leaveSchema = new mongoose.Schema(
+  {
+    employeeId: { type: String, required: true },
+    employeeName: String, // Optional, can be fetched, but storing for easier display
+    type: String,
+    startDate: String,
+    endDate: String,
+    reason: String,
+    status: { type: String, default: "Pending" }, // Pending, Approved, Rejected
+    adminComment: String
+  },
+  { timestamps: true }
+);
+
+const Leave = mongoose.models.Leave || mongoose.model("Leave", leaveSchema);
+
+// Submit Leave Request
+app.post("/api/leaves", async (req, res) => {
+  try {
+    const { employeeId, ...rest } = req.body;
+
+    // Optional: Fetch employee name if not provided
+    const employee = await Employee.findOne({ employeeId });
+    const employeeName = employee ? employee.fullName : "Unknown";
+
+    const newLeave = await Leave.create({
+      employeeId,
+      employeeName,
+      ...rest
+    });
+    res.status(201).json(newLeave);
+  } catch (err) {
+    res.status(500).json({ message: "Error submitting leave", error: err.message });
+  }
+});
+
+// Get All Leaves (for Admin) or My Leaves (for Employee)
+app.get("/api/leaves", async (req, res) => {
+  try {
+    const { employeeId, status } = req.query;
+    let query = {};
+    if (employeeId) query.employeeId = employeeId;
+    if (status) query.status = status; // e.g., ?status=Pending for notifications
+
+    const leaves = await Leave.find(query).sort({ createdAt: -1 });
+    res.json(leaves);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching leaves", error: err.message });
+  }
+});
+
+// Get specific leave stats (e.g. pending count)
+app.get("/api/leaves/pending-count", async (req, res) => {
+  try {
+    const count = await Leave.countDocuments({ status: "Pending" });
+    res.json({ count });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching pending count", error: err.message });
+  }
+});
+
+// Update Leave Status (Approve/Reject)
+app.put("/api/leaves/:id", async (req, res) => {
+  try {
+    const { status, adminComment } = req.body;
+    const leaveId = req.params.id;
+
+    // Fetch the leave request first
+    const leave = await Leave.findById(leaveId);
+    if (!leave) return res.status(404).json({ message: "Leave request not found" });
+
+    // If approving, calculate and deduct balance
+    if (status === "Approved" && leave.status !== "Approved") {
+      const employee = await Employee.findOne({ employeeId: leave.employeeId });
+      if (employee) {
+        // Calculate days
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both days
+
+        const type = leave.type.toLowerCase(); // 'casual', 'sick', or 'earned'
+        if (employee.leaveBalances && ["casual", "sick", "earned"].includes(type)) {
+          employee.leaveBalances[type] = Math.max(0, (employee.leaveBalances[type] || 0) - diffDays);
+          await employee.save();
+        }
+      }
+    }
+
+    leave.status = status;
+    leave.adminComment = adminComment;
+    await leave.save();
+
+    res.json(leave);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating leave", error: err.message });
+  }
+});
+
+/* =========================================================
    🔹 MESSAGE ROUTES (NEW – ADDED ONLY)
 ========================================================= */
 
@@ -415,7 +522,7 @@ app.get("/api/messages", async (req, res) => {
   const { role, id } = req.query;
 
   let query;
-  
+
   if (role === "admin") {
     // Admins see all messages sent to them (toRole: 'admin')
     query = {

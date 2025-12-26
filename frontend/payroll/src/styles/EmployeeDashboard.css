@@ -28,6 +28,7 @@
   font-size: 2.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, #0284c7, #38bdf8);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -43,14 +44,14 @@
   border-radius: var(--radius-md);
   padding: 28px;
   box-shadow:
-    inset 4px 4px 8px rgba(255,255,255,0.8),
-    inset -4px -4px 8px rgba(0,0,0,0.08);
+    inset 4px 4px 8px rgba(255, 255, 255, 0.8),
+    inset -4px -4px 8px rgba(0, 0, 0, 0.08);
   transition: var(--transition);
 }
 
 .fly-card:hover {
   box-shadow:
-    0 20px 40px rgba(56,189,248,0.25);
+    0 20px 40px rgba(56, 189, 248, 0.25);
   transform: translateY(-5px);
 }
 
@@ -60,14 +61,14 @@
   color: white;
   border-radius: 22px;
   padding: 30px;
-  box-shadow: 0 20px 45px rgba(56,189,248,0.45);
+  box-shadow: 0 20px 45px rgba(56, 189, 248, 0.45);
 }
 
 /* ================= BUTTONS ================= */
 .employee-page button {
-  padding: 9px 20px;
-  font-size: 0.85rem;
-  border-radius: 14px;
+  padding: 7px 16px;
+  font-size: 0.8rem;
+  border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #38bdf8, #0284c7);
   color: white;
@@ -77,7 +78,7 @@
 
 .employee-page button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(56,189,248,0.35);
+  box-shadow: 0 10px 25px rgba(56, 189, 248, 0.35);
 }
 
 .employee-page button:active {
@@ -99,8 +100,58 @@
     opacity: 0;
     transform: translateY(18px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ================= MODAL ================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: #f8fafc;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.modal-input:focus {
+  border-color: #f59e0b;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
   }
 }
