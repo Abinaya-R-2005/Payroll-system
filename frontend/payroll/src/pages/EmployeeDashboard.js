@@ -202,8 +202,11 @@ const EmployeeDashboard = () => {
 
                             <button onClick={handleNext} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--primary)' }}>▶</button>
                         </div>
-                        <Button onClick={() => setSearchParams({ v: 'slip' })} className="btn-payslip">
-                            📄 View Pay Slip
+                        <Button
+                            onClick={() => navigate('/profile')}
+                            className="btn-profile"
+                        >
+                            👤 My Profile
                         </Button>
                         <Button
                             onClick={() => navigate('/messages')}
