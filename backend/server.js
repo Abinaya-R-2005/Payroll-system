@@ -13,6 +13,22 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
+  
+
+
+  const getDatesBetween = (startDate, endDate) => {
+  const dates = [];
+  let current = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (current <= end) {
+    dates.push(current.toISOString().slice(0, 10)); // YYYY-MM-DD
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+};
+
 
 /* =========================================================
    EMPLOYEE MODEL
@@ -402,7 +418,24 @@ app.post("/api/attendance", async (req, res) => {
 app.get("/api/attendance", async (req, res) => {
   const { employeeId, month } = req.query;
   const record = await Attendance.findOne({ employeeId, month });
-  res.json(record?.days || {});
+ let days = record?.days || new Map();
+
+// Parse month (YYYY-MM)
+const [year, mon] = month.split('-').map(Number);
+const firstDay = new Date(year, mon - 1, 1);
+const lastDay = new Date(year, mon, 0);
+
+// Find all Sundays in the month
+for (let d = new Date(firstDay); d <= lastDay; d = new Date(d.getTime() + 86400000)) {
+  if (d.getDay() === 0) { // 0 = Sunday
+    const dateStr = d.toISOString().slice(0, 10);
+    if (!days.has(dateStr)) {
+      days.set(dateStr, 'L'); // Mark Sunday as Leave
+    }
+  }
+}
+
+res.json(Object.fromEntries(days));
 });
 
 /* =========================================================
@@ -466,44 +499,6 @@ app.get("/api/leaves/pending-count", async (req, res) => {
     res.json({ count });
   } catch (err) {
     res.status(500).json({ message: "Error fetching pending count", error: err.message });
-  }
-});
-
-// Update Leave Status (Approve/Reject)
-app.put("/api/leaves/:id", async (req, res) => {
-  try {
-    const { status, adminComment } = req.body;
-    const leaveId = req.params.id;
-
-    // Fetch the leave request first
-    const leave = await Leave.findById(leaveId);
-    if (!leave) return res.status(404).json({ message: "Leave request not found" });
-
-    // If approving, calculate and deduct balance
-    if (status === "Approved" && leave.status !== "Approved") {
-      const employee = await Employee.findOne({ employeeId: leave.employeeId });
-      if (employee) {
-        // Calculate days
-        const start = new Date(leave.startDate);
-        const end = new Date(leave.endDate);
-        const diffTime = Math.abs(end - start);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both days
-
-        const type = leave.type.toLowerCase(); // 'casual', 'sick', or 'earned'
-        if (employee.leaveBalances && ["casual", "sick", "earned"].includes(type)) {
-          employee.leaveBalances[type] = Math.max(0, (employee.leaveBalances[type] || 0) - diffDays);
-          await employee.save();
-        }
-      }
-    }
-
-    leave.status = status;
-    leave.adminComment = adminComment;
-    await leave.save();
-
-    res.json(leave);
-  } catch (err) {
-    res.status(500).json({ message: "Error updating leave", error: err.message });
   }
 });
 
@@ -641,6 +636,77 @@ app.delete("/api/employees/:employeeId", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+app.put("/api/leaves/:id", async (req, res) => {
+  try {
+    const { status, adminComment } = req.body;
+    const leaveId = req.params.id;
+
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      return res.status(404).json({ message: "Leave request not found" });
+    }
+
+    // ✅ ONLY WHEN APPROVED
+    if (status === "Approved" && leave.status !== "Approved") {
+
+      // 1️⃣ Get all leave dates
+      const leaveDates = getDatesBetween(leave.startDate, leave.endDate);
+
+      // 2️⃣ Group dates by month (important)
+      const monthMap = {};
+      leaveDates.forEach(date => {
+        const month = date.slice(0, 7); // YYYY-MM
+        if (!monthMap[month]) monthMap[month] = [];
+        monthMap[month].push(date);
+      });
+
+      // 3️⃣ Update attendance for each month
+      for (const month in monthMap) {
+        const updateDays = {};
+
+        monthMap[month].forEach(date => {
+          updateDays[`days.${date}`] = "A"; // A = Absent
+        });
+
+        await Attendance.findOneAndUpdate(
+          { employeeId: leave.employeeId, month },
+          { $set: updateDays },
+          { upsert: true, new: true }
+        );
+      }
+
+      // 4️⃣ Deduct leave balance (already exists, kept intact)
+      const employee = await Employee.findOne({ employeeId: leave.employeeId });
+      if (employee) {
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        const diffDays =
+          Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+        const type = leave.type.toLowerCase();
+        if (employee.leaveBalances?.[type] !== undefined) {
+          employee.leaveBalances[type] = Math.max(
+            0,
+            employee.leaveBalances[type] - diffDays
+          );
+          await employee.save();
+        }
+      }
+    }
+
+    // 5️⃣ Update leave status
+    leave.status = status;
+    leave.adminComment = adminComment;
+    await leave.save();
+
+    res.json({ message: "Leave updated & attendance auto-marked", leave });
+
+  } catch (err) {
+    console.error("Leave approval error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 /* =========================================================
    SERVER
