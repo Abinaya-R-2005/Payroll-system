@@ -14,7 +14,7 @@ const VALID_BANKS = {
 
 const EmployeeProfile = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -561,7 +561,7 @@ const EmployeeProfile = () => {
               <Button onClick={() => navigate("/dashboard")} className="btn-back">
                 ← Back to Dashboard
               </Button>
-              
+
             </>
           ) : (
             <>

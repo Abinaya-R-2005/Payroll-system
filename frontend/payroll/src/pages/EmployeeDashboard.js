@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import SalarySlip from '../components/SalarySlip';
-import AdminMessageViewer from "../components/AdminMessageViewer";
+
 
 import '../styles/EmployeeDashboard.css';
 import '../styles/Messages.css';
@@ -27,7 +27,7 @@ const EmployeeDashboard = () => {
         return new Date(d.getFullYear(), d.getMonth(), 1);
     });
     const [myLeaves, setMyLeaves] = useState([]);
-    const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
+
     const [searchParams, setSearchParams] = useSearchParams();
     const viewMode = searchParams.get('v') || 'overview'; // 'overview' or 'slip'
 
@@ -108,7 +108,7 @@ const EmployeeDashboard = () => {
         fetchAttendance();
         fetchPayslip();
         fetchMyLeaves();
-    }, [employeeData, viewingMonth, attendanceRefreshKey]);
+    }, [employeeData, viewingMonth]);
 
     // Calculations
     const stats = useMemo(() => {
@@ -223,6 +223,24 @@ const EmployeeDashboard = () => {
         } catch (err) {
             console.error('Leave submission error:', err);
             alert('Network error. Please try again.');
+        }
+    };
+
+    const handleLeaveDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this leave request?')) return;
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/leaves/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                setMyLeaves(prev => prev.filter(l => l._id !== id));
+            } else {
+                alert('Failed to delete leave request');
+            }
+        } catch (err) {
+            console.error('Delete leave error:', err);
         }
     };
 
@@ -662,9 +680,34 @@ const EmployeeDashboard = () => {
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <span className={`status-badge status-${statusClass}`}>
-                                                        {leave.status}
-                                                    </span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                                                        <span className={`status-badge status-${statusClass}`}>
+                                                            {leave.status}
+                                                        </span>
+                                                        {leave.status === 'Pending' && (
+                                                            <button
+                                                                onClick={() => handleLeaveDelete(leave._id)}
+                                                                style={{
+                                                                    background: 'none',
+                                                                    border: 'none',
+                                                                    color: '#ef4444',
+                                                                    fontSize: '0.8rem',
+                                                                    fontWeight: '700',
+                                                                    cursor: 'pointer',
+                                                                    padding: '4px 8px',
+                                                                    borderRadius: '6px',
+                                                                    transition: 'all 0.2s',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px'
+                                                                }}
+                                                                onMouseOver={(e) => e.target.style.background = '#fee2e2'}
+                                                                onMouseOut={(e) => e.target.style.background = 'none'}
+                                                            >
+                                                                🗑️ Delete
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className="response-container" style={{ marginTop: '15px', background: 'rgba(248, 250, 252, 0.5)' }}>
                                                     <p style={{ margin: 0, fontSize: '0.95rem', color: '#475569', lineHeight: '1.6' }}>

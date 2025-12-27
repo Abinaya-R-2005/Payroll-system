@@ -112,6 +112,29 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleLeaveDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this leave request?')) return;
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/leaves/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                setLeaveRequests(prev => prev.filter(req => req._id !== id));
+                // Update pending count if it was pending
+                const request = leaveRequests.find(r => r._id === id);
+                if (request && request.status === 'Pending') {
+                    setPendingLeaveCount(prev => Math.max(0, prev - 1));
+                }
+            } else {
+                alert('Failed to delete leave request');
+            }
+        } catch (err) {
+            console.error('Delete leave error:', err);
+        }
+    };
+
 
     const filteredEmployees = employees.filter(emp =>
         (emp.fullName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -519,9 +542,32 @@ const AdminDashboard = () => {
                                                                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '500' }}>{req.startDate} ➝ {req.endDate}</span>
                                                             </div>
                                                         </div>
-                                                        <span className={`status-badge status-${statusClass}`}>
-                                                            {req.status}
-                                                        </span>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                                                            <span className={`status-badge status-${statusClass}`}>
+                                                                {req.status}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleLeaveDelete(req._id)}
+                                                                style={{
+                                                                    background: 'none',
+                                                                    border: 'none',
+                                                                    color: '#ef4444',
+                                                                    fontSize: '0.8rem',
+                                                                    fontWeight: '700',
+                                                                    cursor: 'pointer',
+                                                                    padding: '4px 8px',
+                                                                    borderRadius: '6px',
+                                                                    transition: 'all 0.2s',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px'
+                                                                }}
+                                                                onMouseOver={(e) => e.target.style.background = '#fee2e2'}
+                                                                onMouseOut={(e) => e.target.style.background = 'none'}
+                                                            >
+                                                                🗑️ Delete
+                                                            </button>
+                                                        </div>
                                                     </div>
 
                                                     <div className="response-container">
