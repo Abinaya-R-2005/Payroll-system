@@ -561,23 +561,7 @@ const EmployeeProfile = () => {
               <Button onClick={() => navigate("/dashboard")} className="btn-back">
                 ← Back to Dashboard
               </Button>
-              <Button
-                onClick={() => {
-                  logout();
-                  navigate("/login");
-                }}
-                className="btn-logout"
-                variant="secondary"
-                style={{
-                  padding: '0.6rem 1.8rem',
-                  fontSize: '0.95rem',
-                  fontWeight: '700',
-                  borderRadius: '50px',
-                  background: '#fff'
-                }}
-              >
-                Logout
-              </Button>
+              
             </>
           ) : (
             <>
