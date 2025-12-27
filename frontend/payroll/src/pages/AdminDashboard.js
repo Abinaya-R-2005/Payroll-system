@@ -32,11 +32,11 @@ const AdminDashboard = () => {
 
     const { user } = useAuth();
 
-useEffect(() => {
-  if (!user || user.role !== "admin") {
-    navigate("/login");
-  }
-}, [user, navigate]);
+    useEffect(() => {
+        if (!user || user.role !== "admin") {
+            navigate("/login");
+        }
+    }, [user, navigate]);
 
 
     // Poll for pending leaves count
@@ -175,10 +175,10 @@ useEffect(() => {
 
         const empAttendance = attendanceMap[employeeId] || {};
 
-let presentDays = 0;
-Object.values(empAttendance).forEach(status => {
-  if (status === "P") presentDays++;
-});
+        let presentDays = 0;
+        Object.values(empAttendance).forEach(status => {
+            if (status === "P") presentDays++;
+        });
 
 
         const gross =
@@ -477,76 +477,92 @@ Object.values(empAttendance).forEach(status => {
                     {/* Right Panel: Details & Actions */}
                     <div className="details-panel">
                         {viewMode === 'leaves' ? (
-                            <div className="glass-panel leave-management-panel fade-in">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                    <h2 style={{ margin: 0, color: 'var(--text-main)' }}>Manage Leave Requests</h2>
-                                    <Button onClick={() => setSearchParams({})} variant="secondary" style={{ fontSize: '0.8rem', padding: '6px 12px' }}>Close</Button>
+                            <div className="messages-wrapper" style={{ padding: 0, minHeight: 'auto' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                                    <div>
+                                        <h2 className="title-gradient" style={{ margin: 0, fontSize: '2rem' }}>📋 Leave Requests</h2>
+                                        <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted)', fontWeight: '500' }}>Review and manage employee time-off applications</p>
+                                    </div>
+                                    <Button onClick={() => setSearchParams({})} variant="secondary">Close Viewer</Button>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+
+                                <div className="admin-stats-grid" style={{ marginBottom: '30px' }}>
+                                    <div className="stat-card">
+                                        <h4 style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Pending</h4>
+                                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#f59e0b' }}>
+                                            {leaveRequests.filter(r => r.status === 'Pending').length}
+                                        </div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <h4 style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Today's Total</h4>
+                                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: 'var(--primary)' }}>
+                                            {leaveRequests.length}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gap: '20px' }}>
                                     {leaveRequests.length === 0 ? (
-                                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>No pending leave requests.</p>
+                                        <div className="message-card" style={{ textAlign: 'center', padding: '40px' }}>
+                                            <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '600' }}>All clear! No pending leave requests.</p>
+                                        </div>
                                     ) : (
-                                        leaveRequests.map(req => (
-                                            <div key={req._id} style={{
-                                                background: 'white',
-                                                padding: '20px',
-                                                borderRadius: '16px',
-                                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-                                                border: '1px solid var(--border-color)',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}>
-                                                <div>
-                                                    <h4 style={{ margin: '0 0 5px 0', fontSize: '1.1rem' }}>{req.employeeName}</h4>
-                                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                                        <span style={{ fontWeight: '600', color: 'var(--primary)', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px' }}>{req.type}</span>
-                                                        <span>{req.startDate} ➝ {req.endDate}</span>
+                                        leaveRequests.map(req => {
+                                            const statusClass = req.status === 'Approved' ? 'solved' : (req.status === 'Rejected' ? 'new' : 'open');
+                                            return (
+                                                <div key={req._id} className={`message-card ${req.status === 'Pending' ? 'unread' : ''}`}>
+                                                    <div className="message-header">
+                                                        <div>
+                                                            <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem', fontWeight: '800' }}>{req.employeeName}</h3>
+                                                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '5px' }}>
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--primary)', background: '#e0f2fe', padding: '2px 10px', borderRadius: '50px' }}>{req.type}</span>
+                                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '500' }}>{req.startDate} ➝ {req.endDate}</span>
+                                                            </div>
+                                                        </div>
+                                                        <span className={`status-badge status-${statusClass}`}>
+                                                            {req.status}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="response-container">
+                                                        <p style={{ margin: 0, fontSize: '0.95rem', color: '#44546a', fontStyle: 'italic', lineHeight: '1.5' }}>
+                                                            "{req.reason}"
+                                                        </p>
                                                         {(() => {
                                                             const emp = employees.find(e => e.employeeId === req.employeeId);
                                                             if (emp && emp.leaveBalances) {
                                                                 const balanceKey = req.type.toLowerCase();
                                                                 return (
-                                                                    <span style={{ marginLeft: '10px', color: '#64748b', fontStyle: 'italic', fontWeight: '500' }}>
-                                                                        (Balance: {emp.leaveBalances[balanceKey] ?? 0} days remaining)
-                                                                    </span>
+                                                                    <p style={{ margin: '10px 0 0 0', fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>
+                                                                        Current Balance: <span style={{ color: 'var(--primary)' }}>{emp.leaveBalances[balanceKey] ?? 0} days</span> remaining
+                                                                    </p>
                                                                 );
                                                             }
                                                             return null;
                                                         })()}
                                                     </div>
-                                                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#475569' }}>"{req.reason}"</p>
-                                                </div>
-                                                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                    {req.status === 'Pending' ? (
-                                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                                            <button
-                                                                onClick={() => handleLeaveAction(req._id, 'Approved')}
-                                                                style={{ background: '#dcfce7', color: '#166534', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
-                                                            >
-                                                                ✓ Approve
-                                                            </button>
-                                                            <button
+
+                                                    {req.status === 'Pending' && (
+                                                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
+                                                            <Button
                                                                 onClick={() => handleLeaveAction(req._id, 'Rejected')}
-                                                                style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
+                                                                variant="danger"
+                                                                style={{ padding: '8px 20px', fontSize: '0.85rem' }}
                                                             >
                                                                 ✕ Reject
-                                                            </button>
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => handleLeaveAction(req._id, 'Approved')}
+                                                                variant="primary"
+                                                                style={{ padding: '8px 20px', fontSize: '0.85rem' }}
+                                                            >
+                                                                ✓ Approve Request
+                                                            </Button>
                                                         </div>
-                                                    ) : (
-                                                        <span style={{
-                                                            fontWeight: '700',
-                                                            padding: '6px 12px',
-                                                            borderRadius: '8px',
-                                                            background: req.status === 'Approved' ? '#dcfce7' : '#fee2e2',
-                                                            color: req.status === 'Approved' ? '#166534' : '#991b1b'
-                                                        }}>
-                                                            {req.status.toUpperCase()}
-                                                        </span>
                                                     )}
                                                 </div>
-                                            </div>
-                                        ))
+                                            );
+                                        })
                                     )}
                                 </div>
                             </div>
