@@ -4,12 +4,12 @@
     align-items: center;
     justify-content: center;
     padding: 80px 20px 40px;
-    /* Top padding for navbar */
-    position: relative;
+    /*Toppaddingfornavbar*/position: relative;
     z-index: 1;
     background: linear-gradient(-45deg, #0f172a, #1e293b, #0ea5e9, #1e40af);
     background-size: 400% 400%;
     animation: aboutGradient 15s ease infinite;
+    -webkit-animation: aboutGradient 15s ease infinite;
 }
 
 @keyframes aboutGradient {

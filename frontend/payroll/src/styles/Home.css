@@ -320,3 +320,22 @@ body {
     padding: 1.5rem;
   }
 }
+
+
+.hero-buttons {
+  display: flex;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+/* Primary button already exists */
+.primary-btn {
+  background: #2563eb;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+

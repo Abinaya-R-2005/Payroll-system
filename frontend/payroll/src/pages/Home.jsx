@@ -9,13 +9,18 @@ const Home = () => {
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-wrapper">
+          
           {/* Left Content */}
           <div className="hero-content">
-            <h1>Smart Payroll Management</h1>
+            <h1 className="hero-title">
+              Smart Payroll Management System
+            </h1>
+
             <p>
               A simple and secure payroll system to manage employee salaries,
               attendance, deductions, and payslips efficiently.
             </p>
+
             <Link to="/role">
               <button className="primary-btn">Create Account</button>
             </Link>
@@ -27,7 +32,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
 
       {/* About Section */}
       <section className="about">

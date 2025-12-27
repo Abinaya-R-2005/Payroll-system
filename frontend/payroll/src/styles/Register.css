@@ -1,226 +1,126 @@
-/* ================= RESET ================= */
+/* ================= GLOBAL RESET ================= */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
-/* ================= PAGE WRAPPER ================= */
+/* ================= SCREEN BACKGROUND ================= */
 .register-container {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
+  
+  /* SINGLE BLUE BACKGROUND: Removes the "double blue" clashing */
+  background-color: #4fd1ff; 
 }
 
-/* ================= REGISTER CARD ================= */
+/* ================= THE WHITE CURVED FORM ================= */
 .register-card {
   width: 100%;
-  max-width: 900px;
-  padding: 3rem;
-  border-radius: 20px;
-
-  /* glass crystal */
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-
-  box-shadow: 0 25px 55px rgba(15, 23, 42, 0.45);
-  animation: cardFade 0.7s ease;
+  max-width: 1100px;
+  padding: 4.5rem;
+  
+  /* ULTRA SMOOTH EDGES */
+  border-radius: 40px; 
+  background: #ffffff;
+  
+  /* Clean shadow for a "Classic" elevated look */
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border: none;
 }
 
-/* ================= HEADER ================= */
-.register-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-.register-title {
-  font-size: 2.2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #93c5fd, #ffffff);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.register-header p {
+/* ================= INPUT TYPING BOXES (THE FIX) ================= */
+.register-card label {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* Specific styling for the input areas to ensure they are visible */
+.register-card input, 
+.register-card select, 
+.register-card textarea {
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 12px;
+  
+  /* HIGH-CONTRAST BLACK BORDER: Solves the "searching for input" issue */
+  border: 2px solid #000000 !important; 
+  
+  /* Solid white background for the typing area */
+  background-color: #ffffff !important;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 500;
+  
+  /* Transition for a smooth interaction */
+  transition: all 0.2s ease-in-out;
+  display: block;
+}
+
+/* Focus State: When the user clicks inside to start typing */
+.register-card input:focus,
+.register-card textarea:focus {
+  outline: none;
+  /* Darker blue focus to maintain high contrast */
+  border-color: #1d4ed8 !important; 
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.15);
+  background-color: #ffffff !important;
+}
+
+/* Placeholder visibility */
+.register-card input::placeholder {
+  color: #64748b;
+  opacity: 1;
 }
 
 /* ================= FORM SECTIONS ================= */
 .form-section {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  padding: 1.6rem;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  /* Using a very light grey to provide "Mild Contrast" inside the white card */
+  background: #f1f5f9; 
+  border-radius: 28px;
+  padding: 3rem;
+  margin-bottom: 2.5rem;
+  border: 1px solid #e2e8f0;
 }
 
-/* ================= SECTION TITLE ================= */
-.section-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 1.2rem;
-  display: flex;
-  align-items: center;
-}
-
-.section-title::before {
-  content: "";
-  width: 4px;
-  height: 1.1em;
-  background: linear-gradient(180deg, #60a5fa, #3b82f6);
-  margin-right: 10px;
-  border-radius: 2px;
-}
-
-/* ================= GRID ================= */
+/* ================= GRID SYSTEM ================= */
 .form-section-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
 }
 
-/* ================= LABEL ================= */
-.register-card label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #ffffff;
-}
-
-/* ================= INPUTS ================= */
-.register-card input,
-.register-card select,
-.register-card textarea {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 1.2rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  font-size: 0.9rem;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.register-card input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* hover */
-.register-card input:hover,
-.register-card select:hover,
-.register-card textarea:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: #bfdbfe;
-  transform: translateY(-1px);
-}
-
-/* focus glow */
-.register-card input:focus,
-.register-card select:focus,
-.register-card textarea:focus {
-  background: rgba(255, 255, 255, 0.28);
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.45);
-}
-
-/* ================= CHECKBOX ================= */
-.register-card input[type="checkbox"] {
-  accent-color: #60a5fa;
-  margin-right: 6px;
-}
-
-/* ================= BUTTON ================= */
+/* ================= ACTION BUTTON ================= */
 .register-card button {
-  width: 100%;
-  padding: 13px;
-  margin-top: 1rem;
-  border-radius: 999px;
+  padding: 20px 70px;
+  border-radius: 16px;
   border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  background: #0f172a; /* Deep Navy/Black */
   color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* shine */
-.register-card button::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg,
-      transparent,
-      rgba(255, 255, 255, 0.6),
-      transparent);
-  transform: translateX(-120%);
-  transition: transform 0.7s ease;
-}
-
-.register-card button:hover::before {
-  transform: translateX(120%);
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: block;
+  margin-left: auto;
+  transition: all 0.3s ease;
 }
 
 .register-card button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 35px rgba(59, 130, 246, 0.6);
-}
-
-/* ================= LINKS ================= */
-.register-card a {
-  color: #bfdbfe;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.register-card a:hover {
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(191, 219, 254, 0.8);
-}
-
-/* ================= ANIMATION ================= */
-@keyframes cardFade {
-  from {
-    opacity: 0;
-    transform: translateY(22px) scale(0.97);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  background: #000000;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-  .register-card {
-    padding: 2.2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .register-card {
-    padding: 1.5rem;
-  }
-
-  .register-title {
-    font-size: 1.8rem;
-  }
-
-  .form-section-grid {
-    gap: 15px;
-  }
+@media (max-width: 850px) {
+  .form-section-grid { grid-template-columns: 1fr; }
+  .register-card { padding: 2.5rem 1.5rem; border-radius: 30px; }
 }

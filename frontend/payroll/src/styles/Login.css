@@ -9,7 +9,7 @@
 /* ================= PAGE BACKGROUND ================= */
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(-45deg, #0ea5e9, #2563eb, #38bdf8, #1e40af);
+  background: linear-gradient(-45deg, #0ea5e9, #4fd1ff, #38bdf8, #4fd1ff);
   background-size: 400% 400%;
   animation: gradientFlow 14s ease infinite;
   display: flex;
@@ -17,6 +17,7 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
+  -webkit-animation: gradientFlow 14s ease infinite;
 }
 
 /* floating blobs */
@@ -194,7 +195,7 @@
   margin-top: 12px;
   font-size: 0.88rem;
   font-weight: 500;
-  color: #bfdbfe;
+  color: black;
   text-decoration: none;
   position: relative;
 }
@@ -225,13 +226,15 @@
   align-items: center;
   gap: 6px;
   margin-top: 14px;
-
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: black;
   text-decoration: none;
-
   transition: transform 0.3s ease, color 0.3s ease;
+  -webkit-transition: transform 0.3s ease, color 0.3s ease;
+  -moz-transition: transform 0.3s ease, color 0.3s ease;
+  -ms-transition: transform 0.3s ease, color 0.3s ease;
+  -o-transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .back-link::before {
