@@ -6,7 +6,10 @@ const attendanceSchema = new mongoose.Schema(
     month: { type: String, required: true },
     days: {
       type: Map,
-      of: String // P / A / L
+      of: {
+        status: String, // P / A / L
+        photo: String // base64 image data
+      }
     }
   },
   { timestamps: true }

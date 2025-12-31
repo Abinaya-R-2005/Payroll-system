@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
@@ -45,6 +45,8 @@ const EmployeeDashboard = () => {
 
     const [canMarkAttendance, setCanMarkAttendance] = useState(false);
     const [locationMsg, setLocationMsg] = useState('');
+    const [showCameraModal, setShowCameraModal] = useState(false);
+    const [capturedPhoto, setCapturedPhoto] = useState(null);
 
     // State
     const [employeeData, setEmployeeData] = useState(null);
@@ -56,6 +58,10 @@ const EmployeeDashboard = () => {
         return new Date(d.getFullYear(), d.getMonth(), 1);
     });
     const [myLeaves, setMyLeaves] = useState([]);
+
+    // Refs for camera
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const viewMode = searchParams.get('v') || 'overview'; // 'overview' or 'slip'
@@ -108,9 +114,11 @@ const EmployeeDashboard = () => {
   if (distance <= OFFICE_RADIUS) {
     setCanMarkAttendance(true);
     setLocationMsg(`✅ Inside office (${Math.round(distance)} m)`);
+    setShowCameraModal(true); // Open camera by default
   } else {
     setCanMarkAttendance(false);
     setLocationMsg(`❌ Outside office (${Math.round(distance)} m)`);
+    setShowCameraModal(false); // Close camera if outside
   }
 }
 ,
@@ -120,6 +128,16 @@ const EmployeeDashboard = () => {
     }
   );
 }, [employeeData]);
+
+    // Camera management
+    useEffect(() => {
+        if (showCameraModal) {
+            startCamera();
+        } else {
+            stopCamera();
+        }
+        return () => stopCamera();
+    }, [showCameraModal]);
 
     // Fetch attendance for the viewing month
     useEffect(() => {
@@ -137,7 +155,14 @@ const EmployeeDashboard = () => {
                         if (item.date && item.status) statuses[item.date] = item.status;
                     });
                 } else if (data && typeof data === 'object') {
-                    statuses = data;
+                    Object.keys(data).forEach(date => {
+                        const dayData = data[date];
+                        if (typeof dayData === 'string') {
+                            statuses[date] = dayData; // backward compatibility
+                        } else if (dayData && dayData.status) {
+                            statuses[date] = dayData.status;
+                        }
+                    });
                 }
                 setAttendance(statuses);
             } catch (err) {
@@ -230,6 +255,82 @@ const EmployeeDashboard = () => {
         reason: '',
         type: 'Casual'
     });
+const startCamera = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Camera not supported in this browser.');
+        setShowCameraModal(false);
+        return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = videoRef.current;
+        if (video) {
+            video.srcObject = stream;
+            video.play(); // Ensure it plays
+            console.log('Camera started');
+        } else {
+            console.log('Video element not found');
+        }
+    } catch (err) {
+        console.error('Error accessing camera:', err);
+        alert('Camera access denied or unavailable. Please allow camera access in your browser settings and ensure you are using a secure connection (HTTPS).');
+        setShowCameraModal(false);
+    }
+};
+
+const stopCamera = () => {
+    const video = videoRef.current;
+    if (video && video.srcObject) {
+        const stream = video.srcObject;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+    }
+};
+
+const capturePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (video && canvas) {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
+        const photoData = canvas.toDataURL('image/jpeg');
+        setCapturedPhoto(photoData);
+        stopCamera();
+        setShowCameraModal(false);
+        markAttendanceWithPhoto(photoData);
+    }
+};
+
+const markAttendanceWithPhoto = async (photoData) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  try {
+    const res = await fetch('http://localhost:5000/api/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        employeeId: employeeData.employeeId,
+        date: today,
+        status: 'P',
+        photo: photoData
+      })
+    });
+
+    if (res.ok) {
+      alert('Attendance marked successfully with photo');
+      setAttendance(prev => ({ ...prev, [today]: 'P' }));
+      setCapturedPhoto(null);
+    } else {
+      alert('Attendance already marked');
+    }
+  } catch {
+    alert('Server error');
+  }
+};
+
 const markAttendance = async () => {
   const today = new Date().toISOString().split('T')[0];
 
@@ -525,6 +626,22 @@ const markAttendance = async () => {
                                     <Button type="submit" variant="primary">Submit Request</Button>
                                 </div>
                             </form>
+                        </div>
+                    </div>,
+                    document.body
+                )}
+
+                {/* Camera Modal */}
+                {showCameraModal && createPortal(
+                    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div style={{ background: 'white', padding: '20px', borderRadius: '10px', maxWidth: '500px', width: '90%', textAlign: 'center' }}>
+                            <h3>Take Attendance Photo</h3>
+                            <video ref={videoRef} autoPlay muted style={{ width: '100%', height: '300px', borderRadius: '10px' }}></video>
+                            <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                            <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                                <Button onClick={capturePhoto}>Capture & Mark Attendance</Button>
+                                <Button variant="secondary" onClick={() => setShowCameraModal(false)}>Cancel</Button>
+                            </div>
                         </div>
                     </div>,
                     document.body

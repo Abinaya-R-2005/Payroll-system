@@ -4,14 +4,14 @@ const Attendance = require("../models/Attendance");
 
 router.post("/", async (req, res) => {
   try {
-    const { employeeId, date, status } = req.body;
+    const { employeeId, date, status, photo } = req.body;
     const month = date.slice(0, 7); // YYYY-MM
 
     await Attendance.findOneAndUpdate(
       { employeeId, month },                 // SAME document
       {
         $set: {
-          [`days.${date}`]: status            // add/update day
+          [`days.${date}`]: { status, photo }            // add/update day with status and photo
         }
       },
       {
