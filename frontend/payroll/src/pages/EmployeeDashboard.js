@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
@@ -10,30 +10,40 @@ import '../styles/EmployeeDashboard.css';
 import '../styles/Messages.css';
 import '../styles/Button.css';
 
+// import * as faceapi from 'face-api.js'; // Switched to CDN to avoid Webpack 5 fs errors
+const faceapi = window.faceapi;
+
 
 
 /* =========================
-   OFFICE GEO LOCATION CONFIG
+/* =========================
+   TESTING / DEVELOPER CONFIG
    ========================= */
-const OFFICE_LAT = 9.57471;      // change to your office latitude
-const OFFICE_LNG = 77.96361;      // change to your office longitude
-const OFFICE_RADIUS = 200000;       // meters
+const USE_MOCK_LOCATION = true; // Set to TRUE to simulate being at the coordinates below
+const TEST_LAT = 9.042310;
+const TEST_LNG = 78.198921;
+
+// Fallback Office (if no DB match found)
+// const FALLBACK_OFFICE_LAT = TEST_LAT;
+// const FALLBACK_OFFICE_LNG = TEST_LNG;
+// const FALLBACK_RADIUS = 2000;
+
 
 /* =========================
    DISTANCE CALCULATION
    ========================= */
 function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // meters
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const R = 6371000; // meters
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
 
-  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 
@@ -45,8 +55,14 @@ const EmployeeDashboard = () => {
 
     const [canMarkAttendance, setCanMarkAttendance] = useState(false);
     const [locationMsg, setLocationMsg] = useState('');
+    const [assignedLocation, setAssignedLocation] = useState(null);
+    const [allLocations, setAllLocations] = useState([]);
+    const [currentPos, setCurrentPos] = useState(null); // { lat, lng }
+    const [modelsLoaded, setModelsLoaded] = useState(false);
+    const [livenessStatus, setLivenessStatus] = useState('Standby'); // Standby, Instructions, Verifying, Success, Failed
+    const [livenessMsg, setLivenessMsg] = useState('Position your face in the frame');
+    const [referenceDescriptor, setReferenceDescriptor] = useState(null);
     const [showCameraModal, setShowCameraModal] = useState(false);
-    const [capturedPhoto, setCapturedPhoto] = useState(null);
 
     // State
     const [employeeData, setEmployeeData] = useState(null);
@@ -77,7 +93,7 @@ const EmployeeDashboard = () => {
 
         const fetchDetails = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/employees');
+                const res = await fetch('http://192.168.1.7:5001/api/employees');
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 const currentEmp = data.find(emp => emp.email === user.email || emp.employeeId === user.employeeId);
@@ -90,44 +106,307 @@ const EmployeeDashboard = () => {
         };
         fetchDetails();
     }, [user]);
+    // Load Models and Reference Descriptor
     useEffect(() => {
-  if (!employeeData) return;
+        const loadModelsAndDescriptor = async () => {
+            const MODEL_URL = '/models';
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+                setModelsLoaded(true);
+                console.log("Face models loaded");
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-  const userLat = pos.coords.latitude;
-  const userLng = pos.coords.longitude;
+                if (employeeData?.photo) {
+                    const img = await faceapi.fetchImage(employeeData.photo);
+                    const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                    if (detection) {
+                        setReferenceDescriptor(detection.descriptor);
+                        console.log("Reference descriptor created");
+                    } else {
+                        console.warn("Could not extract descriptor from profile photo");
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading models/descriptor:", err);
+            }
+        };
+        if (employeeData) loadModelsAndDescriptor();
+    }, [employeeData]);
 
-  const distance = getDistance(
-    userLat,
-    userLng,
-    OFFICE_LAT,
-    OFFICE_LNG
-  );
+    // Fetch site assignment for current date
+    useEffect(() => {
+        if (!employeeData?.employeeId) return;
 
-  console.log("User Lat:", userLat);
-  console.log("User Lng:", userLng);
-  console.log("Office Lat:", OFFICE_LAT);
-  console.log("Office Lng:", OFFICE_LNG);
-  console.log("Distance (meters):", distance);
+        const fetchAssignment = async () => {
+            const today = new Date().toISOString().split('T')[0];
+            try {
+                const res = await fetch(`http://192.168.1.7:5001/api/site-assignments?employeeId=${employeeData.employeeId}&date=${today}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.locationId) {
+                        setAssignedLocation(data.locationId);
+                    } else {
+                        // If no assignment, maybe default to main office?
+                        // For now we assume they must be assigned.
+                        setAssignedLocation(null);
+                    }
+                }
+            } catch (err) {
+                console.warn("Error fetching site assignment:", err);
+            }
+        };
+        fetchAssignment();
+    }, [employeeData]);
 
-  if (distance <= OFFICE_RADIUS) {
-    setCanMarkAttendance(true);
-    setLocationMsg(`✅ Inside office (${Math.round(distance)} m)`);
-    setShowCameraModal(true); // Open camera by default
-  } else {
-    setCanMarkAttendance(false);
-    setLocationMsg(`❌ Outside office (${Math.round(distance)} m)`);
-    setShowCameraModal(false); // Close camera if outside
-  }
-}
-,
-    () => {
-      setCanMarkAttendance(false);
-      setLocationMsg('❌ Location permission required');
-    }
-  );
-}, [employeeData]);
+    // Fetch all managed locations from database
+    useEffect(() => {
+        const fetchLocations = async () => {
+            try {
+                const res = await fetch('http://192.168.1.7:5001/api/locations');
+                if (res.ok) {
+                    const data = await res.json();
+                    setAllLocations(data);
+                }
+            } catch (err) {
+                console.warn("Error fetching managed locations:", err);
+            }
+        };
+        fetchLocations();
+    }, []);
+
+    useEffect(() => {
+        if (!employeeData) return;
+
+        if (!employeeData) return;
+
+        // GPS LOCATION STRATEGY
+        const getGeoLocation = (onSuccess, onError) => {
+            if (USE_MOCK_LOCATION) {
+                console.log("⚠️ USING MOCK LOCATION");
+                onSuccess({
+                    coords: {
+                        latitude: TEST_LAT,
+                        longitude: TEST_LNG,
+                        accuracy: 10
+                    }
+                });
+            } else {
+                navigator.geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: true });
+            }
+        };
+
+        getGeoLocation(
+            (pos) => {
+                const userLat = pos.coords.latitude;
+                const userLng = pos.coords.longitude;
+                setCurrentPos({ lat: userLat, lng: userLng });
+
+                // STRICT VALIDATION LOGIC
+                // 1. If Assigned: Must be at that specific location.
+                // 2. If Not Assigned: Must be at ANY valid company location.
+
+                let matchedLoc = null;
+                let nearestLoc = null;
+                let minDist = Infinity;
+
+                // Helper to check list
+                const checkLocations = (vals) => {
+                    for (let loc of vals) {
+                        const dist = getDistance(userLat, userLng, loc.latitude, loc.longitude);
+                        const radius = loc.radius || 100;
+
+                        // Keep track of nearest for error message
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearestLoc = { ...loc, dist };
+                        }
+
+                        if (dist <= radius) {
+                            return { ...loc, dist }; // Found a match!
+                        }
+                    }
+                    return null;
+                };
+
+                if (assignedLocation) {
+                    // Check ONLY assigned location
+                    matchedLoc = checkLocations([assignedLocation]);
+                } else {
+                    // Check ALL locations
+                    matchedLoc = checkLocations(allLocations);
+                }
+
+                if (matchedLoc) {
+                    setCanMarkAttendance(true);
+                    setLocationMsg(`✅ Inside ${matchedLoc.name} (${Math.round(matchedLoc.dist)} m)`);
+                } else {
+                    setCanMarkAttendance(false);
+                    // Determine what to show in error
+                    if (nearestLoc) {
+                        setLocationMsg(`❌ Outside ${nearestLoc.name} (${Math.round(nearestLoc.dist)} m) \n Your Pos: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}`);
+                    } else {
+                        setLocationMsg(`❌ No Office Assigned/Found \n Your Pos: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}`);
+                    }
+                }
+            },
+            () => {
+                setCanMarkAttendance(false);
+                setLocationMsg('❌ Location permission required');
+            }
+        );
+    }, [employeeData, assignedLocation, allLocations]);
+
+    const stopCamera = useCallback(() => {
+        const video = videoRef.current;
+        if (video && video.srcObject) {
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            video.srcObject = null;
+        }
+    }, []);
+
+    const markAttendanceWithPhoto = useCallback(async (photoData, verifyStatus = 'Manual Capture') => {
+        const today = new Date().toISOString().split('T')[0];
+
+        try {
+            const res = await fetch('http://192.168.1.7:5001/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    employeeId: employeeData.employeeId,
+                    date: today,
+                    status: 'P',
+                    photo: photoData,
+                    verifyStatus: verifyStatus,
+                    location: currentPos ? {
+                        lat: currentPos.lat,
+                        lng: currentPos.lng,
+                        siteName: assignedLocation?.name || "Office"
+                    } : null
+                })
+            });
+
+            if (res.ok) {
+                alert(`Attendance marked successfully: ${verifyStatus}`);
+                setAttendance(prev => ({ ...prev, [today]: 'P' }));
+            } else {
+                alert('Attendance already marked for today');
+            }
+        } catch {
+            alert('Connection error with attendance server');
+        }
+    }, [employeeData, currentPos, assignedLocation]);
+
+    const captureAndSubmit = useCallback(() => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (video && canvas) {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            const photoData = canvas.toDataURL('image/jpeg');
+            stopCamera();
+            setShowCameraModal(false);
+            markAttendanceWithPhoto(photoData, 'Verified (Liveness + Face Match)');
+        }
+    }, [stopCamera, markAttendanceWithPhoto]);
+
+    const runFaceDetection = useCallback(async () => {
+        const video = videoRef.current;
+        if (!video || !modelsLoaded) return;
+
+        setLivenessMsg("Detecting face...");
+        setLivenessStatus('Verifying');
+
+        let blinkDetected = false;
+        let faceMatched = false;
+
+        const faceMatcher = referenceDescriptor ? new faceapi.FaceMatcher(referenceDescriptor, 0.6) : null;
+
+        const interval = setInterval(async () => {
+            if (!video || video.paused || video.ended) {
+                clearInterval(interval);
+                return;
+            }
+
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (detection) {
+                // 1. Face Match Check
+                if (faceMatcher) {
+                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                    if (bestMatch.label !== 'unknown') {
+                        faceMatched = true;
+                    }
+                } else {
+                    faceMatched = true; // Skip matching if no reference, but warning
+                }
+
+                // 2. Liveness Check (Blink detection)
+                const landmarks = detection.landmarks;
+                const leftEye = landmarks.getLeftEye();
+                const rightEye = landmarks.getRightEye();
+
+                const getEAR = (eye) => {
+                    const p1 = eye[0], p2 = eye[1], p3 = eye[2], p4 = eye[3], p5 = eye[4], p6 = eye[5];
+                    const dist = () => Math.sqrt((p2.x - p6.x) ** 2 + (p2.y - p6.y) ** 2) + Math.sqrt((p3.x - p5.x) ** 2 + (p3.y - p5.y) ** 2);
+                    const denom = 2 * Math.sqrt((p1.x - p4.x) ** 2 + (p1.y - p4.y) ** 2);
+                    return dist() / denom;
+                };
+
+                const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+
+                if (ear < 0.2) {
+                    blinkDetected = true;
+                }
+
+                if (faceMatched && blinkDetected) {
+                    setLivenessMsg("✅ Verified! Capturing...");
+                    setLivenessStatus('Success');
+                    clearInterval(interval);
+                    setTimeout(() => captureAndSubmit(), 1000);
+                } else if (faceMatched) {
+                    setLivenessMsg("Please blink your eyes to verify liveness");
+                } else {
+                    setLivenessMsg("Face not recognized. Use your profile photo face.");
+                }
+            } else {
+                setLivenessMsg("Place your face clearly in the camera");
+            }
+        }, 200);
+
+        return () => clearInterval(interval);
+    }, [modelsLoaded, referenceDescriptor, captureAndSubmit]);
+
+    const startCamera = useCallback(async () => {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Camera not supported in this browser.');
+            setShowCameraModal(false);
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } });
+            const video = videoRef.current;
+            if (video) {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    runFaceDetection();
+                };
+            }
+        } catch (err) {
+            console.error('Error accessing camera:', err);
+            alert('Camera access denied or unavailable.');
+            setShowCameraModal(false);
+        }
+    }, [runFaceDetection]);
 
     // Camera management
     useEffect(() => {
@@ -137,7 +416,7 @@ const EmployeeDashboard = () => {
             stopCamera();
         }
         return () => stopCamera();
-    }, [showCameraModal]);
+    }, [showCameraModal, startCamera, stopCamera]);
 
     // Fetch attendance for the viewing month
     useEffect(() => {
@@ -145,7 +424,7 @@ const EmployeeDashboard = () => {
 
         const fetchAttendance = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/attendance?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
+                const res = await fetch(`http://192.168.1.7:5001/api/attendance?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
                 if (!res.ok) throw new Error('Failed to fetch attendance');
                 const data = await res.json();
 
@@ -173,7 +452,7 @@ const EmployeeDashboard = () => {
 
         const fetchPayslip = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/payslip?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
+                const res = await fetch(`http://192.168.1.7:5001/api/payslip?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
                 if (!res.ok) throw new Error('Failed to fetch payslip');
                 const data = await res.json();
                 setPayslipData(data);
@@ -185,7 +464,7 @@ const EmployeeDashboard = () => {
 
         const fetchMyLeaves = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/leaves?employeeId=${encodeURIComponent(employeeData.employeeId)}`);
+                const res = await fetch(`http://192.168.1.7:5001/api/leaves?employeeId=${encodeURIComponent(employeeData.employeeId)}`);
                 if (res.ok) {
                     const data = await res.json();
                     setMyLeaves(data);
@@ -255,106 +534,13 @@ const EmployeeDashboard = () => {
         reason: '',
         type: 'Casual'
     });
-const startCamera = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Camera not supported in this browser.');
-        setShowCameraModal(false);
-        return;
-    }
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const video = videoRef.current;
-        if (video) {
-            video.srcObject = stream;
-            video.play(); // Ensure it plays
-            console.log('Camera started');
-        } else {
-            console.log('Video element not found');
-        }
-    } catch (err) {
-        console.error('Error accessing camera:', err);
-        alert('Camera access denied or unavailable. Please allow camera access in your browser settings and ensure you are using a secure connection (HTTPS).');
-        setShowCameraModal(false);
-    }
-};
 
-const stopCamera = () => {
-    const video = videoRef.current;
-    if (video && video.srcObject) {
-        const stream = video.srcObject;
-        const tracks = stream.getTracks();
-        tracks.forEach(track => track.stop());
-        video.srcObject = null;
-    }
-};
 
-const capturePhoto = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (video && canvas) {
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0);
-        const photoData = canvas.toDataURL('image/jpeg');
-        setCapturedPhoto(photoData);
-        stopCamera();
-        setShowCameraModal(false);
-        markAttendanceWithPhoto(photoData);
-    }
-};
 
-const markAttendanceWithPhoto = async (photoData) => {
-  const today = new Date().toISOString().split('T')[0];
 
-  try {
-    const res = await fetch('http://localhost:5000/api/attendance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        employeeId: employeeData.employeeId,
-        date: today,
-        status: 'P',
-        photo: photoData
-      })
-    });
 
-    if (res.ok) {
-      alert('Attendance marked successfully with photo');
-      setAttendance(prev => ({ ...prev, [today]: 'P' }));
-      setCapturedPhoto(null);
-    } else {
-      alert('Attendance already marked');
-    }
-  } catch {
-    alert('Server error');
-  }
-};
 
-const markAttendance = async () => {
-  const today = new Date().toISOString().split('T')[0];
 
-  try {
-    const res = await fetch('http://localhost:5000/api/attendance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        employeeId: employeeData.employeeId,
-        date: today,
-        status: 'P'
-      })
-    });
-
-    if (res.ok) {
-      alert('Attendance marked successfully');
-      setAttendance(prev => ({ ...prev, [today]: 'P' }));
-    } else {
-      alert('Attendance already marked');
-    }
-  } catch {
-    alert('Server error');
-  }
-};
 
     const handleLeaveSubmit = async (e) => {
         e.preventDefault();
@@ -633,14 +819,52 @@ const markAttendance = async () => {
 
                 {/* Camera Modal */}
                 {showCameraModal && createPortal(
-                    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                        <div style={{ background: 'white', padding: '20px', borderRadius: '10px', maxWidth: '500px', width: '90%', textAlign: 'center' }}>
-                            <h3>Take Attendance Photo</h3>
-                            <video ref={videoRef} autoPlay muted style={{ width: '100%', height: '300px', borderRadius: '10px' }}></video>
-                            <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-                            <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                                <Button onClick={capturePhoto}>Capture & Mark Attendance</Button>
+                    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+                        <div style={{ background: 'white', padding: '30px', borderRadius: '24px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+                            <h3 className="title-gradient" style={{ marginBottom: '10px' }}>Secure Attendance</h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontWeight: '500' }}>Biometric Verification in progress...</p>
+
+                            <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#000', height: '350px' }}>
+                                <video ref={videoRef} autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover' }}></video>
+                                <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    padding: '15px',
+                                    background: 'rgba(0,0,0,0.6)',
+                                    color: 'white',
+                                    backdropFilter: 'blur(5px)',
+                                    fontWeight: '600'
+                                }}>
+                                    {livenessMsg}
+                                </div>
+
+                                {livenessStatus === 'Success' && (
+                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '5rem' }}>✅</div>
+                                )}
+                            </div>
+
+                            <div style={{ marginTop: '25px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
                                 <Button variant="secondary" onClick={() => setShowCameraModal(false)}>Cancel</Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => {
+                                        const video = videoRef.current;
+                                        const canvas = canvasRef.current;
+                                        if (video && canvas) {
+                                            canvas.width = video.videoWidth;
+                                            canvas.height = video.videoHeight;
+                                            canvas.getContext('2d').drawImage(video, 0, 0);
+                                            const photoData = canvas.toDataURL('image/jpeg');
+                                            markAttendanceWithPhoto(photoData, 'Manual Capture');
+                                        }
+                                    }}
+                                >
+                                    📸 Capture & Mark
+                                </Button>
                             </div>
                         </div>
                     </div>,
@@ -660,28 +884,28 @@ const markAttendance = async () => {
 
                 {viewMode === 'overview' && (
                     <>
-                    <Button
-  onClick={markAttendance}
-  disabled={!canMarkAttendance}
-  style={{
-    background: canMarkAttendance
-      ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-      : '#9ca3af',
-    color: 'white',
-    cursor: canMarkAttendance ? 'pointer' : 'not-allowed'
-  }}
->
-  🕘 Mark Attendance
-</Button>
+                        <Button
+                            onClick={() => setShowCameraModal(true)}
+                            disabled={!canMarkAttendance}
+                            style={{
+                                background: canMarkAttendance
+                                    ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                                    : '#9ca3af',
+                                color: 'white',
+                                cursor: canMarkAttendance ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            🕘 Mark Attendance
+                        </Button>
 
-<p style={{ fontSize: '0.8rem', color: '#ef4444' }}>
-  {locationMsg}
-</p>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center', marginBottom: '5px' }}>
+                            📡 Database: {allLocations.length > 0 ? `Connected (${allLocations.length} Locations)` : 'Connecting / Empty'}
+                            {USE_MOCK_LOCATION && <span style={{ color: '#f59e0b', marginLeft: '10px' }}>⚠️ Mock GPS On</span>}
+                        </p>
 
-
-<p style={{ fontSize: '0.8rem', color: '#ef4444' }}>
-  {locationMsg}
-</p>
+                        <p style={{ fontSize: '0.8rem', color: '#ef4444' }}>
+                            {locationMsg}
+                        </p>
 
                         <div className="fly-card" style={{ marginBottom: '30px', padding: '30px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>

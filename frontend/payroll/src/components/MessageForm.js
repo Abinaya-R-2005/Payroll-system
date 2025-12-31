@@ -29,7 +29,7 @@ const MessageForm = ({ employee, onMessageSent }) => {
                 status: 'open'
             };
 
-            const res = await fetch('http://localhost:5000/api/messages', {
+            const res = await fetch('http://192.168.1.7:5001/api/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

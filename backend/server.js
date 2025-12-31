@@ -8,6 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Simple request logger
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.url}`);
+  next();
+});
+
 /* ---------- DB CONNECTION ---------- */
 mongoose
   .connect(process.env.MONGO_URI)
@@ -114,7 +120,7 @@ const attendanceSchema = new mongoose.Schema(
     month: { type: String, required: true },
     days: {
       type: Map,
-      of: String
+      of: mongoose.Schema.Types.Mixed
     }
   },
   { timestamps: true }
@@ -272,8 +278,11 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.get("/ping", (req, res) => res.json({ message: "pong" }));
+
 app.post("/login", async (req, res) => {
   const { email, password, role } = req.body;
+  console.log(`🔐 Login attempt: ${email} (${role})`);
 
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
@@ -403,12 +412,17 @@ app.put("/api/employees/:employeeId/payroll", async (req, res) => {
    ATTENDANCE
 ========================================================= */
 app.post("/api/attendance", async (req, res) => {
-  const { employeeId, date, status } = req.body;
+  const { employeeId, date, status, photo, verifyStatus, location } = req.body;
   const month = date.slice(0, 7);
+
+  const updateData = { status };
+  if (photo) updateData.photo = photo;
+  if (verifyStatus) updateData.verifyStatus = verifyStatus;
+  if (location) updateData.location = location;
 
   await Attendance.findOneAndUpdate(
     { employeeId, month },
-    { $set: { [`days.${date}`]: status } },
+    { $set: { [`days.${date}`]: updateData } },
     { upsert: true, new: true }
   );
 
@@ -472,6 +486,38 @@ const leaveSchema = new mongoose.Schema(
 );
 
 const Leave = mongoose.models.Leave || mongoose.model("Leave", leaveSchema);
+
+/* =========================================================
+   🔹 LOCATION MODEL
+========================================================= */
+const locationSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    radius: { type: Number, default: 100 }, // in meters
+    type: { type: String, enum: ["office", "client"], default: "office" }
+  },
+  { timestamps: true }
+);
+
+const Location = mongoose.models.Location || mongoose.model("Location", locationSchema);
+
+/* =========================================================
+   🔹 SITE ASSIGNMENT MODEL
+========================================================= */
+const siteAssignmentSchema = new mongoose.Schema(
+  {
+    employeeId: { type: String, required: true },
+    locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location", required: true },
+    date: { type: String, required: true } // YYYY-MM-DD
+  },
+  { timestamps: true }
+);
+
+siteAssignmentSchema.index({ employeeId: 1, date: 1 }, { unique: true });
+
+const SiteAssignment = mongoose.models.SiteAssignment || mongoose.model("SiteAssignment", siteAssignmentSchema);
 
 // Submit Leave Request
 app.post("/api/leaves", async (req, res) => {
@@ -736,11 +782,72 @@ app.delete("/api/leaves/:id", async (req, res) => {
   }
 });
 
+/* =========================================================
+   🔹 LOCATION ROUTES
+========================================================= */
+app.post("/api/locations", async (req, res) => {
+  try {
+    console.log("📍 Creating location:", req.body);
+    const location = await Location.create(req.body);
+    res.status(201).json(location);
+  } catch (err) {
+    console.error("❌ Error adding location:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/locations", async (req, res) => {
+  try {
+    const locations = await Location.find();
+    res.json(locations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/locations/:id", async (req, res) => {
+  try {
+    await Location.findByIdAndDelete(req.params.id);
+    res.json({ message: "Location deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* =========================================================
+   🔹 SITE ASSIGNMENT ROUTES
+========================================================= */
+app.post("/api/site-assignments", async (req, res) => {
+  try {
+    const assignment = await SiteAssignment.findOneAndUpdate(
+      { employeeId: req.body.employeeId, date: req.body.date },
+      { $set: req.body },
+      { upsert: true, new: true }
+    );
+    res.json(assignment);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/site-assignments", async (req, res) => {
+  try {
+    const { employeeId, date } = req.query;
+    let query = {};
+    if (employeeId) query.employeeId = employeeId;
+    if (date) query.date = date;
+    const assignments = await SiteAssignment.find(query).populate("locationId");
+    res.json(assignments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 /* =========================================================
    SERVER
 ========================================================= */
-const PORT = process.env.PORT || 5000;
+const PORT = 5001; // Hardcoded to avoid port 5000 conflicts
 app.listen(PORT, () =>
   console.log(`🚀 Server running on port ${PORT}`)
 );

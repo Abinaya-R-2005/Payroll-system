@@ -9,7 +9,7 @@ const AdminMessageViewer = ({ messages, onStatusChange, onDelete, loading }) => 
         if (!responseText[messageId]?.trim()) return;
 
         try {
-            const res = await fetch(`http://localhost:5000/api/messages/${messageId}`, {
+            const res = await fetch(`http://192.168.1.7:5001/api/messages/${messageId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -31,7 +31,7 @@ const AdminMessageViewer = ({ messages, onStatusChange, onDelete, loading }) => 
     const handleDelete = async (messageId) => {
         if (!window.confirm('Delete this message?')) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/messages/${messageId}`, {
+            const res = await fetch(`http://192.168.1.7:5001/api/messages/${messageId}`, {
                 method: 'DELETE'
             });
             if (!res.ok) throw new Error('Failed to delete');

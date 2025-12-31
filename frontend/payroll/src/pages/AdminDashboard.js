@@ -7,6 +7,8 @@ import PayrollForm from '../components/PayrollForm';
 import AttendancePanel from '../components/AttendancePanel';
 import SalarySlip from '../components/SalarySlip';
 import LeaveBalancePanel from '../components/LeaveBalancePanel';
+import LocationManager from '../components/LocationManager';
+import SiteAssignment from '../components/SiteAssignment';
 import '../styles/AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -43,7 +45,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchPendingCount = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/leaves/pending-count');
+                const res = await fetch('http://192.168.1.7:5001/api/leaves/pending-count');
                 if (res.ok) {
                     const data = await res.json();
                     setPendingLeaveCount(data.count);
@@ -63,7 +65,7 @@ const AdminDashboard = () => {
         if (viewMode === 'leaves') {
             const fetchLeaves = async () => {
                 try {
-                    const res = await fetch('http://localhost:5000/api/leaves');
+                    const res = await fetch('http://192.168.1.7:5001/api/leaves');
                     if (res.ok) {
                         const data = await res.json();
                         setLeaveRequests(data);
@@ -92,7 +94,7 @@ const AdminDashboard = () => {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/api/leaves/${id}`, {
+            const res = await fetch(`http://192.168.1.7:5001/api/leaves/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })
@@ -116,7 +118,7 @@ const AdminDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this leave request?')) return;
 
         try {
-            const res = await fetch(`http://localhost:5000/api/leaves/${id}`, {
+            const res = await fetch(`http://192.168.1.7:5001/api/leaves/${id}`, {
                 method: 'DELETE'
             });
 
@@ -159,7 +161,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/employees');
+                const res = await fetch('http://192.168.1.7:5001/api/employees');
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 setEmployees(Array.isArray(data) ? data : []);
@@ -177,7 +179,7 @@ const AdminDashboard = () => {
     const handleEmployeeSelect = async (employee) => {
         try {
             const res = await fetch(
-                `http://localhost:5000/api/employees/${employee.employeeId}`
+                `http://192.168.1.7:5001/api/employees/${employee.employeeId}`
             );
 
             if (!res.ok) {
@@ -454,6 +456,65 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
+                <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+                    <button
+                        onClick={() => setSearchParams({ v: 'config' })}
+                        style={{
+                            padding: '10px 20px',
+                            border: 'none',
+                            background: viewMode === 'config' || viewMode === 'slip' ? 'var(--primary)' : 'transparent',
+                            color: viewMode === 'config' || viewMode === 'slip' ? 'white' : 'var(--text-main)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        Payroll & Attendance
+                    </button>
+                    <button
+                        onClick={() => setSearchParams({ v: 'locations' })}
+                        style={{
+                            padding: '10px 20px',
+                            border: 'none',
+                            background: viewMode === 'locations' ? 'var(--primary)' : 'transparent',
+                            color: viewMode === 'locations' ? 'white' : 'var(--text-main)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        📍 Locations
+                    </button>
+                    <button
+                        onClick={() => setSearchParams({ v: 'assignments' })}
+                        style={{
+                            padding: '10px 20px',
+                            border: 'none',
+                            background: viewMode === 'assignments' ? 'var(--primary)' : 'transparent',
+                            color: viewMode === 'assignments' ? 'white' : 'var(--text-main)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        📅 Site Assignments
+                    </button>
+                    <button
+                        onClick={() => setSearchParams({ v: 'geo' })}
+                        style={{
+                            padding: '10px 20px',
+                            border: 'none',
+                            background: viewMode === 'geo' ? 'var(--primary)' : 'transparent',
+                            color: viewMode === 'geo' ? 'white' : 'var(--text-main)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        🌍 Geo-Tracker (Live)
+                    </button>
+                </div>
+
                 {/* Admin Quick Stats */}
                 <div className="no-print" style={{
                     display: 'grid',
@@ -611,6 +672,77 @@ const AdminDashboard = () => {
                                         })
                                     )}
                                 </div>
+                            </div>
+                        ) : viewMode === 'locations' ? (
+                            <div className="fly-card" style={{ padding: '25px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <h2 className="title-gradient" style={{ margin: 0 }}>📍 Geography Configuration</h2>
+                                    <Button onClick={() => setSearchParams({ v: 'config' })} variant="secondary">Back to Dashboard</Button>
+                                </div>
+                                <LocationManager />
+                            </div>
+                        ) : viewMode === 'geo' ? (
+                            <div className="fly-card" style={{ padding: '25px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <h2 className="title-gradient" style={{ margin: 0 }}>🌍 Workforce Geo-Tracker</h2>
+                                    <Button onClick={() => setSearchParams({ v: 'config' })} variant="secondary">Back to Dashboard</Button>
+                                </div>
+                                <div style={{ background: 'rgba(241, 245, 249, 0.5)', borderRadius: '15px', padding: '20px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                                        {employees.map(emp => {
+                                            const attendanceData = attendanceMap[emp.employeeId] || {};
+                                            // Fallback to latest attendance if today is missing
+                                            const allDates = Object.keys(attendanceData).sort().reverse();
+                                            const latestDate = allDates[0];
+                                            const lastData = latestDate ? attendanceData[latestDate] : null;
+
+                                            return (
+                                                <div key={emp.employeeId} className="fly-card" style={{ padding: '15px', border: '1px solid #e2e8f0' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                                            {emp.fullName?.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{emp.fullName}</div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{emp.employeeId}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    {lastData?.location ? (
+                                                        <div style={{ fontSize: '0.85rem' }}>
+                                                            <div style={{ color: '#10b981', fontWeight: '600', marginBottom: '5px' }}>
+                                                                📍 Last Seen at {lastData.location.siteName || "Unknown Site"}
+                                                            </div>
+                                                            <div style={{ color: 'var(--text-muted)', marginBottom: '10px' }}>
+                                                                {latestDate} at {lastData.location.lat.toFixed(6)}, {lastData.location.lng.toFixed(6)}
+                                                            </div>
+                                                            <a
+                                                                href={`https://www.google.com/maps?q=${lastData.location.lat},${lastData.location.lng}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
+                                                            >
+                                                                🗺️ View on Google Maps
+                                                            </a>
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                                            No recent location data available.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : viewMode === 'assignments' ? (
+                            <div className="fly-card" style={{ padding: '25px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <h2 className="title-gradient" style={{ margin: 0 }}>📅 Field Workforce Assignment</h2>
+                                    <Button onClick={() => setSearchParams({ v: 'config' })} variant="secondary">Back to Dashboard</Button>
+                                </div>
+                                <SiteAssignment employees={employees} />
                             </div>
                         ) : (
                             <>
