@@ -1,21 +1,50 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { useAuth } from '../context/AuthContext';
-import Button from '../components/Button';
-import SalarySlip from '../components/SalarySlip';
 
+import { useAuth } from '../context/AuthContext';
+import Button from '../components/Button';   // ✅ ONLY Button import
+import SalarySlip from '../components/SalarySlip';
 
 import '../styles/EmployeeDashboard.css';
 import '../styles/Messages.css';
 import '../styles/Button.css';
 
-// const weekdayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+
+/* =========================
+   OFFICE GEO LOCATION CONFIG
+   ========================= */
+const OFFICE_LAT = 9.57471;      // change to your office latitude
+const OFFICE_LNG = 77.96361;      // change to your office longitude
+const OFFICE_RADIUS = 200000;       // meters
+
+/* =========================
+   DISTANCE CALCULATION
+   ========================= */
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+
 
 const EmployeeDashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const weekdayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    const [canMarkAttendance, setCanMarkAttendance] = useState(false);
+    const [locationMsg, setLocationMsg] = useState('');
 
     // State
     const [employeeData, setEmployeeData] = useState(null);
@@ -55,6 +84,42 @@ const EmployeeDashboard = () => {
         };
         fetchDetails();
     }, [user]);
+    useEffect(() => {
+  if (!employeeData) return;
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+  const userLat = pos.coords.latitude;
+  const userLng = pos.coords.longitude;
+
+  const distance = getDistance(
+    userLat,
+    userLng,
+    OFFICE_LAT,
+    OFFICE_LNG
+  );
+
+  console.log("User Lat:", userLat);
+  console.log("User Lng:", userLng);
+  console.log("Office Lat:", OFFICE_LAT);
+  console.log("Office Lng:", OFFICE_LNG);
+  console.log("Distance (meters):", distance);
+
+  if (distance <= OFFICE_RADIUS) {
+    setCanMarkAttendance(true);
+    setLocationMsg(`✅ Inside office (${Math.round(distance)} m)`);
+  } else {
+    setCanMarkAttendance(false);
+    setLocationMsg(`❌ Outside office (${Math.round(distance)} m)`);
+  }
+}
+,
+    () => {
+      setCanMarkAttendance(false);
+      setLocationMsg('❌ Location permission required');
+    }
+  );
+}, [employeeData]);
 
     // Fetch attendance for the viewing month
     useEffect(() => {
@@ -165,6 +230,30 @@ const EmployeeDashboard = () => {
         reason: '',
         type: 'Casual'
     });
+const markAttendance = async () => {
+  const today = new Date().toISOString().split('T')[0];
+
+  try {
+    const res = await fetch('http://localhost:5000/api/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        employeeId: employeeData.employeeId,
+        date: today,
+        status: 'P'
+      })
+    });
+
+    if (res.ok) {
+      alert('Attendance marked successfully');
+      setAttendance(prev => ({ ...prev, [today]: 'P' }));
+    } else {
+      alert('Attendance already marked');
+    }
+  } catch {
+    alert('Server error');
+  }
+};
 
     const handleLeaveSubmit = async (e) => {
         e.preventDefault();
@@ -454,6 +543,29 @@ const EmployeeDashboard = () => {
 
                 {viewMode === 'overview' && (
                     <>
+                    <Button
+  onClick={markAttendance}
+  disabled={!canMarkAttendance}
+  style={{
+    background: canMarkAttendance
+      ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+      : '#9ca3af',
+    color: 'white',
+    cursor: canMarkAttendance ? 'pointer' : 'not-allowed'
+  }}
+>
+  🕘 Mark Attendance
+</Button>
+
+<p style={{ fontSize: '0.8rem', color: '#ef4444' }}>
+  {locationMsg}
+</p>
+
+
+<p style={{ fontSize: '0.8rem', color: '#ef4444' }}>
+  {locationMsg}
+</p>
+
                         <div className="fly-card" style={{ marginBottom: '30px', padding: '30px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                                 <h2 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.8rem', fontWeight: '800' }}>Financial Insights</h2>
