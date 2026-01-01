@@ -20,7 +20,7 @@ const LocationManager = () => {
 
     const fetchLocations = async () => {
         try {
-            const res = await fetch('http://192.168.1.7:5001/api/locations');
+            const res = await fetch('http://localhost:5001/api/locations');
             const data = await res.json();
             setLocations(data);
         } catch (err) {
@@ -33,7 +33,7 @@ const LocationManager = () => {
         setLoading(true);
         setMessage('');
         try {
-            const res = await fetch('http://192.168.1.7:5001/api/locations', {
+            const res = await fetch('http://localhost:5001/api/locations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newLocation)
@@ -56,7 +56,7 @@ const LocationManager = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this location?')) return;
         try {
-            await fetch(`http://192.168.1.7:5001/api/locations/${id}`, { method: 'DELETE' });
+            await fetch(`http://localhost:5001/api/locations/${id}`, { method: 'DELETE' });
             fetchLocations();
         } catch (err) {
             console.error('Error deleting location:', err);

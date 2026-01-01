@@ -25,7 +25,7 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://192.168.1.7:5001/login", {
+      const res = await fetch("http://localhost:5001/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

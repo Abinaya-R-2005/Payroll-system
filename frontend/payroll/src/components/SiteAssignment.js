@@ -15,7 +15,7 @@ const SiteAssignment = ({ employees }) => {
 
     const fetchLocations = useCallback(async () => {
         try {
-            const res = await fetch('http://192.168.1.7:5001/api/locations');
+            const res = await fetch('http://localhost:5001/api/locations');
             const data = await res.json();
             setLocations(data);
         } catch (err) {
@@ -25,7 +25,7 @@ const SiteAssignment = ({ employees }) => {
 
     const fetchAssignments = useCallback(async () => {
         try {
-            const res = await fetch(`http://192.168.1.7:5001/api/site-assignments?date=${date}`);
+            const res = await fetch(`http://localhost:5001/api/site-assignments?date=${date}`);
             const data = await res.json();
             setAssignments(data);
         } catch (err) {
@@ -48,7 +48,7 @@ const SiteAssignment = ({ employees }) => {
         setLoading(true);
         setMessage('');
         try {
-            const res = await fetch('http://192.168.1.7:5001/api/site-assignments', {
+            const res = await fetch('http://localhost:5001/api/site-assignments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

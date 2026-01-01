@@ -20,8 +20,8 @@ const faceapi = window.faceapi;
    TESTING / DEVELOPER CONFIG
    ========================= */
 const USE_MOCK_LOCATION = true; // Set to TRUE to simulate being at the coordinates below
-const TEST_LAT = 9.042310;
-const TEST_LNG = 78.198921;
+const TEST_LAT = 9.571763;
+const TEST_LNG = 77.962355;
 
 // Fallback Office (if no DB match found)
 // const FALLBACK_OFFICE_LAT = TEST_LAT;
@@ -93,7 +93,7 @@ const EmployeeDashboard = () => {
 
         const fetchDetails = async () => {
             try {
-                const res = await fetch('http://192.168.1.7:5001/api/employees');
+                const res = await fetch('http://localhost:5001/api/employees');
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 const currentEmp = data.find(emp => emp.email === user.email || emp.employeeId === user.employeeId);

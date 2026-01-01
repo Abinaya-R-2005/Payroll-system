@@ -45,7 +45,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchPendingCount = async () => {
             try {
-                const res = await fetch('http://192.168.1.7:5001/api/leaves/pending-count');
+                const res = await fetch('http://localhost:5001/api/leaves/pending-count');
                 if (res.ok) {
                     const data = await res.json();
                     setPendingLeaveCount(data.count);
@@ -65,7 +65,7 @@ const AdminDashboard = () => {
         if (viewMode === 'leaves') {
             const fetchLeaves = async () => {
                 try {
-                    const res = await fetch('http://192.168.1.7:5001/api/leaves');
+                    const res = await fetch('http://localhost:5001/api/leaves');
                     if (res.ok) {
                         const data = await res.json();
                         setLeaveRequests(data);
@@ -94,7 +94,7 @@ const AdminDashboard = () => {
         }
 
         try {
-            const res = await fetch(`http://192.168.1.7:5001/api/leaves/${id}`, {
+            const res = await fetch(`http://localhost:5001/api/leaves/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this leave request?')) return;
 
         try {
-            const res = await fetch(`http://192.168.1.7:5001/api/leaves/${id}`, {
+            const res = await fetch(`http://localhost:5001/api/leaves/${id}`, {
                 method: 'DELETE'
             });
 
@@ -161,7 +161,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
-                const res = await fetch('http://192.168.1.7:5001/api/employees');
+                const res = await fetch('http://localhost:5001/api/employees');
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 setEmployees(Array.isArray(data) ? data : []);
@@ -179,7 +179,7 @@ const AdminDashboard = () => {
     const handleEmployeeSelect = async (employee) => {
         try {
             const res = await fetch(
-                `http://192.168.1.7:5001/api/employees/${employee.employeeId}`
+                `http://localhost:5001/api/employees/${employee.employeeId}`
             );
 
             if (!res.ok) {
@@ -250,7 +250,7 @@ const AdminDashboard = () => {
             netSalary
         };
 
-        await fetch("http://192.168.1.7:5001/api/payslip", {
+        await fetch("http://localhost:5001/api/payslip", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payslipPayload)
@@ -271,7 +271,7 @@ const AdminDashboard = () => {
 
         // Attempt to POST to backend; if unavailable, just log and continue
         try {
-            const res = await fetch('http://192.168.1.7:5001/api/attendance', {
+            const res = await fetch('http://localhost:5001/api/attendance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ employeeId, date, status })
@@ -290,7 +290,7 @@ const AdminDashboard = () => {
 
         const fetchAttendance = async () => {
             try {
-                const res = await fetch(`http://192.168.1.7:5001/api/attendance?employeeId=${encodeURIComponent(selectedEmployee.employeeId)}&month=${viewingMonth}`);
+                const res = await fetch(`http://localhost:5001/api/attendance?employeeId=${encodeURIComponent(selectedEmployee.employeeId)}&month=${viewingMonth}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
 
@@ -313,7 +313,7 @@ const AdminDashboard = () => {
 
         const fetchPayslip = async () => {
             try {
-                const res = await fetch(`http://192.168.1.7:5001/api/payslip?employeeId=${encodeURIComponent(selectedEmployee.employeeId)}&month=${viewingMonth}`);
+                const res = await fetch(`http://localhost:5001/api/payslip?employeeId=${encodeURIComponent(selectedEmployee.employeeId)}&month=${viewingMonth}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 setPayslipData(data);
@@ -329,7 +329,7 @@ const AdminDashboard = () => {
 
     const handleUpdateLeaveBalances = async (employeeId, balances) => {
         try {
-            const res = await fetch(`http://192.168.1.7:5001/api/employees/${employeeId}`, {
+            const res = await fetch(`http://localhost:5001/api/employees/${employeeId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ leaveBalances: balances })
@@ -359,7 +359,7 @@ const AdminDashboard = () => {
 
         try {
             const res = await fetch(
-                `http://192.168.1.7:5001/api/employees/${employee.employeeId}`,
+                `http://localhost:5001/api/employees/${employee.employeeId}`,
                 {
                     method: "DELETE"
                 }

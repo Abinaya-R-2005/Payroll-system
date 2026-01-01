@@ -20,7 +20,7 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://192.168.1.7:5001/forgot-password", {
+      const res = await fetch("http://localhost:5001/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
