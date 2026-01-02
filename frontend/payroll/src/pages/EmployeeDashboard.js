@@ -20,8 +20,8 @@ const faceapi = window.faceapi;
    TESTING / DEVELOPER CONFIG
    ========================= */
 const USE_MOCK_LOCATION = true; // Set to TRUE to simulate being at the coordinates below
-const TEST_LAT = 9.571763;
-const TEST_LNG = 77.962355;
+const TEST_LAT = 9.572462;
+const TEST_LNG = 77.962319;
 
 // Fallback Office (if no DB match found)
 // const FALLBACK_OFFICE_LAT = TEST_LAT;
@@ -144,7 +144,7 @@ const EmployeeDashboard = () => {
             const d = new Date();
             const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             try {
-                const res = await fetch(`http://192.168.1.7:5001/api/site-assignments?employeeId=${employeeData.employeeId}&date=${today}`);
+                const res = await fetch(`http://localhost:5001/api/site-assignments?employeeId=${employeeData.employeeId}&date=${today}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.locationId) {
@@ -166,7 +166,7 @@ const EmployeeDashboard = () => {
     useEffect(() => {
         const fetchLocations = async () => {
             try {
-                const res = await fetch('http://192.168.1.7:5001/api/locations');
+                const res = await fetch('http://localhost:5001/api/locations');
                 if (res.ok) {
                     const data = await res.json();
                     setAllLocations(data);
@@ -275,7 +275,7 @@ const EmployeeDashboard = () => {
         const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
         try {
-            const res = await fetch('http://192.168.1.7:5001/api/attendance', {
+            const res = await fetch('http://localhost:5001/api/attendance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -427,7 +427,7 @@ const EmployeeDashboard = () => {
 
         const fetchAttendance = async () => {
             try {
-                const res = await fetch(`http://192.168.1.7:5001/api/attendance?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
+                const res = await fetch(`http://localhost:5001/api/attendance?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
                 if (!res.ok) throw new Error('Failed to fetch attendance');
                 const data = await res.json();
 
@@ -455,7 +455,7 @@ const EmployeeDashboard = () => {
 
         const fetchPayslip = async () => {
             try {
-                const res = await fetch(`http://192.168.1.7:5001/api/payslip?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
+                const res = await fetch(`http://localhost:5001/api/payslip?employeeId=${encodeURIComponent(employeeData.employeeId)}&month=${viewingMonth}`);
                 if (!res.ok) throw new Error('Failed to fetch payslip');
                 const data = await res.json();
                 setPayslipData(data);
@@ -467,7 +467,7 @@ const EmployeeDashboard = () => {
 
         const fetchMyLeaves = async () => {
             try {
-                const res = await fetch(`http://192.168.1.7:5001/api/leaves?employeeId=${encodeURIComponent(employeeData.employeeId)}`);
+                const res = await fetch(`http://localhost:5001/api/leaves?employeeId=${encodeURIComponent(employeeData.employeeId)}`);
                 if (res.ok) {
                     const data = await res.json();
                     setMyLeaves(data);
@@ -578,7 +578,7 @@ const EmployeeDashboard = () => {
         }
 
         try {
-            const res = await fetch('http://192.168.1.7:5001/api/leaves', {
+            const res = await fetch('http://localhost:5001/api/leaves', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -593,7 +593,7 @@ const EmployeeDashboard = () => {
                 setShowLeaveModal(false);
                 setLeaveData({ startDate: '', endDate: '', reason: '', type: 'Casual' });
                 // Refresh leaves list
-                const refreshed = await fetch(`http://192.168.1.7:5001/api/leaves?employeeId=${encodeURIComponent(employeeData.employeeId)}`);
+                const refreshed = await fetch(`http://localhost:5001/api/leaves?employeeId=${encodeURIComponent(employeeData.employeeId)}`);
                 if (refreshed.ok) setMyLeaves(await refreshed.json());
             } else {
                 const errData = await res.json();
@@ -609,7 +609,7 @@ const EmployeeDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this leave request?')) return;
 
         try {
-            const res = await fetch(`http://192.168.1.7:5001/api/leaves/${id}`, {
+            const res = await fetch(`http://localhost:5001/api/leaves/${id}`, {
                 method: 'DELETE'
             });
 
