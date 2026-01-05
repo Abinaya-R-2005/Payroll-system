@@ -75,12 +75,13 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             <Input
-              label="Email"
+              label={role === "admin" ? "Email" : "Employee ID / Email"}
               name="email"
-              type="email"
+              type="text"
               value={formData.email}
               onChange={handleChange}
               required
+              placeholder={role === "admin" ? "admin@payroll.com" : "e.g. Fly_emp1 or name@example.com"}
             />
 
             <Input

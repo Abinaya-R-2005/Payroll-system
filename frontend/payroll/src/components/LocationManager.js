@@ -68,7 +68,7 @@ const LocationManager = () => {
     const handleGetCurrentLocation = () => {
         setGettingLocation(true);
         setMessage('');
-        
+
         if (!navigator.geolocation) {
             setMessage('Geolocation is not supported by your browser.');
             setGettingLocation(false);
@@ -109,20 +109,20 @@ const LocationManager = () => {
     const handleUpdate = async (e) => {
         e.preventDefault();
         if (!editingLocation) return;
-        
+
         setLoading(true);
         setMessage('');
         try {
             // First delete old location
             await fetch(`http://localhost:5001/api/locations/${editingLocation._id}`, { method: 'DELETE' });
-            
+
             // Then create new one
             const res = await fetch('http://localhost:5001/api/locations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newLocation)
             });
-            
+
             if (res.ok) {
                 setMessage('Location updated successfully!');
                 setNewLocation({ name: '', latitude: '', longitude: '', radius: 100, type: 'office' });
@@ -166,61 +166,24 @@ const LocationManager = () => {
                         required
                         placeholder="e.g. Head Office"
                     />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)' }}>Latitude</label>
-                        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                            <input
-                                type="number"
-                                step="any"
-                                value={newLocation.latitude}
-                                onChange={(e) => setNewLocation({ ...newLocation, latitude: e.target.value })}
-                                required
-                                placeholder="e.g. 12.9716"
-                                style={{
-                                    flex: 1,
-                                    padding: '12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #e2e8f0',
-                                    backgroundColor: '#f8fafc',
-                                    outline: 'none'
-                                }}
-                            />
-                            {newLocation.latitude && newLocation.longitude && (
-                                <a
-                                    href={`https://www.google.com/maps?q=${newLocation.latitude},${newLocation.longitude}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{
-                                        padding: '12px',
-                                        background: '#3b82f6',
-                                        color: 'white',
-                                        borderRadius: '8px',
-                                        textDecoration: 'none',
-                                        fontSize: '0.85rem',
-                                        fontWeight: '600',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                    title="View on Google Maps"
-                                >
-                                    🗺️ Map
-                                </a>
-                            )}
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)' }}>Longitude</label>
-                        <Input
-                            type="number"
-                            step="any"
-                            value={newLocation.longitude}
-                            onChange={(e) => setNewLocation({ ...newLocation, longitude: e.target.value })}
-                            required
-                            placeholder="e.g. 77.5946"
-                        />
-                    </div>
+                    <Input
+                        label="Latitude"
+                        type="number"
+                        step="any"
+                        value={newLocation.latitude}
+                        onChange={(e) => setNewLocation({ ...newLocation, latitude: e.target.value })}
+                        required
+                        placeholder="e.g. 12.9716"
+                    />
+                    <Input
+                        label="Longitude"
+                        type="number"
+                        step="any"
+                        value={newLocation.longitude}
+                        onChange={(e) => setNewLocation({ ...newLocation, longitude: e.target.value })}
+                        required
+                        placeholder="e.g. 77.5946"
+                    />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)' }}>Get Current Location</label>
                         <button
@@ -244,6 +207,30 @@ const LocationManager = () => {
                         >
                             {gettingLocation ? '⏳ Getting...' : '📍 Get My Current Location'}
                         </button>
+
+                        {newLocation.latitude && newLocation.longitude && (
+                            <a
+                                href={`https://www.google.com/maps?q=${newLocation.latitude},${newLocation.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    padding: '12px',
+                                    background: '#3b82f6',
+                                    color: 'white',
+                                    borderRadius: '8px',
+                                    textDecoration: 'none',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                🗺️ View on Map
+                            </a>
+                        )}
                         <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
                             Click to automatically fill coordinates from your current GPS location
                         </p>
@@ -274,8 +261,8 @@ const LocationManager = () => {
                     </div>
                     <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                         {editingLocation && (
-                            <Button 
-                                type="button" 
+                            <Button
+                                type="button"
                                 onClick={handleCancelEdit}
                                 style={{ width: '150px', background: '#6b7280' }}
                             >
@@ -357,12 +344,12 @@ const LocationManager = () => {
                                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                 <button
                                                     onClick={() => handleEdit(loc)}
-                                                    style={{ 
-                                                        border: 'none', 
-                                                        background: '#3b82f6', 
-                                                        color: 'white', 
-                                                        cursor: 'pointer', 
-                                                        fontSize: '0.85rem', 
+                                                    style={{
+                                                        border: 'none',
+                                                        background: '#3b82f6',
+                                                        color: 'white',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.85rem',
                                                         fontWeight: '600',
                                                         padding: '6px 12px',
                                                         borderRadius: '6px'
@@ -372,13 +359,13 @@ const LocationManager = () => {
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(loc._id)}
-                                                    style={{ 
-                                                        border: 'none', 
-                                                        background: 'none', 
-                                                        color: '#ef4444', 
-                                                        cursor: 'pointer', 
-                                                        fontSize: '0.9rem', 
-                                                        fontWeight: '600' 
+                                                    style={{
+                                                        border: 'none',
+                                                        background: 'none',
+                                                        color: '#ef4444',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: '600'
                                                     }}
                                                 >
                                                     Delete

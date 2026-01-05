@@ -13,6 +13,67 @@ import '../styles/Button.css';
 // import * as faceapi from 'face-api.js'; // Switched to CDN to avoid Webpack 5 fs errors
 const faceapi = window.faceapi;
 
+const DAILY_TEXTS = [
+    "Work Harder Now",
+    "Dream Big Daily",
+    "Stay Focused Today",
+    "Create Your Future",
+    "Never Give Up",
+    "Be The Best",
+    "Lead With Honor",
+    "Trust The Process",
+    "Make It Happen",
+    "Keep Moving Forward",
+    "Stay Humble Always",
+    "Time Is Money",
+    "Knowledge Is Power",
+    "Think Outside Box",
+    "Do Great Work",
+    "Focus On Quality",
+    "Aim For High",
+    "Value Every Minute",
+    "Learn Something New",
+    "Growth Mindset Wins",
+    "Take Bold Action",
+    "Solve Hard Problems",
+    "Be A Leader",
+    "Respect Everyone Here",
+    "Honesty Is Key",
+    "Teamwork Wins Games",
+    "Build Strong Bonds",
+    "Stay Positive Daily",
+    "Embrace The Change",
+    "Innovation Is Key",
+    "Plan Your Work",
+    "Work Your Plan",
+    "Code Is Art",
+    "Keep It Simple",
+    "Less Is More",
+    "Quality Over Quantity",
+    "Speed With Precision",
+    "Errors Teach Lessons",
+    "Celebrate Small Wins",
+    "Help Others Grow",
+    "Listen Before Speaking",
+    "Think Before Acting",
+    "Commit To Excellence",
+    "Rise And Grind",
+    "Seize The Day",
+    "Love Your Job",
+    "Own Your Tasks",
+    "Finish What Started",
+    "Deliver On Time",
+    "Exceed All Expectations"
+];
+
+const getTodayText = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const index =
+        today.split("").reduce((sum, ch) => sum + ch.charCodeAt(0), 0) %
+        DAILY_TEXTS.length;
+    return DAILY_TEXTS[index];
+};
+
 
 
 /* =========================
@@ -58,11 +119,11 @@ const EmployeeDashboard = () => {
     const navigate = useNavigate();
     const weekdayShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-    const [canMarkAttendance, setCanMarkAttendance] = useState(false);
+
     const [locationMsg, setLocationMsg] = useState('');
     const [assignedLocation, setAssignedLocation] = useState(null);
     const [allLocations, setAllLocations] = useState([]);
-    const [currentPos, setCurrentPos] = useState(null); // { lat, lng }
+
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [livenessStatus, setLivenessStatus] = useState('Standby'); // Standby, Instructions, Verifying, Success, Failed
     const [livenessMsg, setLivenessMsg] = useState('Position your face in the frame');
@@ -147,7 +208,7 @@ const EmployeeDashboard = () => {
 
     // Helper function to check location and update state
     const checkLocationAndUpdate = useCallback((userLat, userLng) => {
-        setCurrentPos({ lat: userLat, lng: userLng });
+
 
         let matchedLoc = null;
         let nearestLoc = null;
@@ -177,7 +238,7 @@ const EmployeeDashboard = () => {
         matchedLoc = checkLocations(allLocations);
 
         if (matchedLoc) {
-            setCanMarkAttendance(true);
+
             // Show both current GPS and office location for comparison
             const officeLoc = allLocations.find(loc => loc.name === matchedLoc.name);
             if (officeLoc) {
@@ -186,7 +247,7 @@ const EmployeeDashboard = () => {
                 setLocationMsg(`✅ Inside ${matchedLoc.name} (${Math.round(matchedLoc.dist)} m)\n📍 Your GPS: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}`);
             }
         } else {
-            setCanMarkAttendance(false);
+
             // Determine what to show in error
             if (nearestLoc) {
                 const officeLoc = allLocations.find(loc => loc.name === nearestLoc.name);
@@ -199,7 +260,7 @@ const EmployeeDashboard = () => {
                 setLocationMsg(`❌ No Office Assigned/Found\n📍 Your GPS: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}`);
             }
         }
-    }, [assignedLocation, allLocations]);
+    }, [allLocations]);
 
     // Fetch site assignment for current date
     useEffect(() => {
@@ -283,7 +344,7 @@ const EmployeeDashboard = () => {
                 checkLocationAndUpdate(userLat, userLng);
             },
             () => {
-                setCanMarkAttendance(false);
+
                 setLocationMsg('❌ Location permission required');
             }
         );
@@ -302,66 +363,6 @@ const EmployeeDashboard = () => {
    DAILY TEXT VERIFICATION
    ========================= */
 
-    const DAILY_TEXTS = [
-        "Work Harder Now",
-        "Dream Big Daily",
-        "Stay Focused Today",
-        "Create Your Future",
-        "Never Give Up",
-        "Be The Best",
-        "Lead With Honor",
-        "Trust The Process",
-        "Make It Happen",
-        "Keep Moving Forward",
-        "Stay Humble Always",
-        "Time Is Money",
-        "Knowledge Is Power",
-        "Think Outside Box",
-        "Do Great Work",
-        "Focus On Quality",
-        "Aim For High",
-        "Value Every Minute",
-        "Learn Something New",
-        "Growth Mindset Wins",
-        "Take Bold Action",
-        "Solve Hard Problems",
-        "Be A Leader",
-        "Respect Everyone Here",
-        "Honesty Is Key",
-        "Teamwork Wins Games",
-        "Build Strong Bonds",
-        "Stay Positive Daily",
-        "Embrace The Change",
-        "Innovation Is Key",
-        "Plan Your Work",
-        "Work Your Plan",
-        "Code Is Art",
-        "Keep It Simple",
-        "Less Is More",
-        "Quality Over Quantity",
-        "Speed With Precision",
-        "Errors Teach Lessons",
-        "Celebrate Small Wins",
-        "Help Others Grow",
-        "Listen Before Speaking",
-        "Think Before Acting",
-        "Commit To Excellence",
-        "Rise And Grind",
-        "Seize The Day",
-        "Love Your Job",
-        "Own Your Tasks",
-        "Finish What Started",
-        "Deliver On Time",
-        "Exceed All Expectations"
-    ];
-
-    const getTodayText = () => {
-        const today = new Date().toISOString().slice(0, 10);
-        const index =
-            today.split("").reduce((sum, ch) => sum + ch.charCodeAt(0), 0) %
-            DAILY_TEXTS.length;
-        return DAILY_TEXTS[index];
-    };
 
 
     const markAttendanceWithPhoto = useCallback(async (photoData, verifyStatus = 'Manual Capture') => {
@@ -1201,7 +1202,7 @@ const EmployeeDashboard = () => {
                                                 checkLocationAndUpdate(userLat, userLng);
                                             },
                                             () => {
-                                                setCanMarkAttendance(false);
+
                                                 setLocationMsg('❌ Location permission required');
                                             }
                                         );

@@ -309,17 +309,27 @@ app.post("/login", async (req, res) => {
     console.log(`👤 Role: ${role}`);
 
     // First, let's check what emails exist in DB
-    const allEmployees = await Employee.find({}, { email: 1 });
+    const allEmployees = await Employee.find({}, { email: 1, employeeId: 1 });
     console.log(`\n📊 All registered employee emails in DB:`);
     allEmployees.forEach((emp, idx) => {
-      console.log(`   ${idx + 1}. "${emp.email}" (length: ${emp.email.length})`);
+      console.log(`   ${idx + 1}. "${emp.email}" (ID: ${emp.employeeId})`);
     });
 
-    // Try exact match first
-    console.log(`\n🔍 Trying exact match...`);
-    let user = await Employee.findOne({ email: email });
+    let user = null;
 
-    // If not found, try case-insensitive
+    // Check by Employee ID first if role is employee
+    if (role === 'employee') {
+      console.log(`🔍 Checking if input is an Employee ID...`);
+      user = await Employee.findOne({ employeeId: email }); // 'email' var holds the identifier
+    }
+
+    // If not found by ID, try exact match on email
+    if (!user) {
+      console.log(`\n🔍 Trying exact email match...`);
+      user = await Employee.findOne({ email: email });
+    }
+
+    // If still not found, try case-insensitive email
     if (!user) {
       console.log(`⚠️ Exact match failed, trying case-insensitive...`);
       user = await Employee.findOne({ email: { $regex: `^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: "i" } });
@@ -338,9 +348,19 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    // STRICT ROLE CHECK
+    // If the user tries to login as 'admin' but their DB role is 'employee', deny it.
+    // If the user tries to login as 'employee' but their DB role is 'admin', deny it.
+    if (user.role !== role) {
+      console.log(`⛔ Role mismatch! Request: ${role}, User: ${user.role}`);
+      return res.status(403).json({
+        message: `Access denied. You are trying to login to the ${role} portal, but your account is registered as ${user.role}.`
+      });
+    }
+
     console.log(`✅ Login successful for email: ${email}\n`);
     res.json({
-      role: user.role || role,
+      role: user.role,
       email: user.email,
       fullName: user.fullName,
       employeeId: user.employeeId
@@ -454,17 +474,17 @@ app.post("/api/attendance", async (req, res) => {
 
     // Validate real-time GPS coordinates
     if (!gpsLat || !gpsLng) {
-      return res.status(400).json({ 
-        message: "Real-time GPS coordinates are required. Please enable location services." 
+      return res.status(400).json({
+        message: "Real-time GPS coordinates are required. Please enable location services."
       });
     }
 
     // Fetch all registered locations from admin portal
     const registeredLocations = await Location.find();
-    
+
     if (!registeredLocations || registeredLocations.length === 0) {
-      return res.status(400).json({ 
-        message: "No locations registered in admin portal. Please contact administrator." 
+      return res.status(400).json({
+        message: "No locations registered in admin portal. Please contact administrator."
       });
     }
 
@@ -480,9 +500,9 @@ app.post("/api/attendance", async (req, res) => {
         loc.latitude,
         loc.longitude
       );
-      
+
       const radius = loc.radius || 100; // Default radius is 100 meters
-      
+
       if (distance < minDistance) {
         minDistance = distance;
       }
@@ -499,7 +519,7 @@ app.post("/api/attendance", async (req, res) => {
     }
 
     if (!isWithinLocation) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: `You are not within any registered location. Nearest location is ${Math.round(minDistance)}m away. Please move to a registered location to mark attendance.`,
         nearestDistance: Math.round(minDistance)
       });
@@ -529,7 +549,7 @@ app.post("/api/attendance", async (req, res) => {
     );
 
     console.log(`✅ Attendance saved for ${employeeId} on ${date}: ${status} at ${matchedLocation.name}`);
-    res.json({ 
+    res.json({
       message: "Attendance saved successfully",
       location: matchedLocation.name,
       distance: matchedLocation.distance
